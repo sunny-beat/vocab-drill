@@ -87,6 +87,11 @@
 </div>
 <div id="toast" class="hidden"></div>
 
+<script type="module">
+  /* FSRS-5 记忆算法（ts-fsrs，本地打包，离线可用） */
+  import { fsrs, generatorParameters, createEmptyCard, Rating, State } from './vendor/fsrs.js';
+  window.FSRSLIB = { fsrs, generatorParameters, createEmptyCard, Rating, State };
+</script>
 <script src="js/app.js"></script>
 </body>
 </html>

@@ -12,6 +12,75 @@ const BOOKS = {
 const PAGES = ['study', 'books', 'dict', 'list'];
 const LS_KEY = 'vocabdrill.v2';
 
+/* ================= FSRS-5 记忆算法（ts-fsrs 本地封装） ================= */
+/* 评分 1=Again 2=Hard 3=Good；进度字段：{ due, stability, difficulty, last, state, lv, wrong, lastWrong } */
+let _FSRS = null;
+function F() {
+  if (_FSRS) return _FSRS;
+  if (window.FSRSLIB) {
+    _FSRS = window.FSRSLIB.fsrs(window.FSRSLIB.generatorParameters({ enable_fuzz: true, enable_short_term: false }));
+    return _FSRS;
+  }
+  // 静态 module 标签失效时的动态导入兜底
+  if (!window._fsrsLoading) {
+    window._fsrsLoading = import('./vendor/fsrs.js').then(function (m) {
+      window.FSRSLIB = m;
+      _FSRS = m.fsrs(m.generatorParameters({ enable_fuzz: true, enable_short_term: false }));
+    }).catch(function () { window._fsrsLoading = null; });
+  }
+  return null;
+}
+function levelFromS(s) {
+  return Math.max(0, Math.min(7, Math.floor(Math.log2(s + 1))));
+}
+function fmtInterval(ms) {
+  const m = ms / 60000;
+  if (m < 60) return Math.max(1, Math.round(m)) + '分';
+  if (m < 1440) return Math.round(m / 60) + '小时';
+  const dd = Math.round(m / 1440);
+  return dd >= 60 ? Math.round(dd / 30) + '个月' : dd + '天';
+}
+function buildFsrsCard(p, now) {
+  if (p && p.stability != null) {
+    return {
+      due: new Date(p.due || now),
+      stability: p.stability,
+      difficulty: p.difficulty,
+      last_review: p.last ? new Date(p.last) : undefined,
+      state: p.state != null ? p.state : 2
+    };
+  }
+  if (p) {
+    // 旧版 lv/due 进度迁移
+    const s = Math.pow(2, p.lv || 0);
+    return {
+      due: new Date(p.due || now),
+      stability: s,
+      difficulty: Math.max(1, Math.min(10, 8 - (p.lv || 0))),
+      last_review: p.due ? new Date(p.due - s * DAY) : undefined,
+      state: 2
+    };
+  }
+  return window.FSRSLIB.createEmptyCard(new Date(now));
+}
+function nextIntervalPreview(p, g) {
+  const Fk = F();
+  const now = Date.now();
+  if (Fk) {
+    try {
+      const out = Fk.next(buildFsrsCard(p, now), new Date(now), g);
+      return fmtInterval(out.card.due.getTime() - now);
+    } catch (e) { /* 兜底 */ }
+  }
+  const lv = Math.min((p ? p.lv : 0) + (g === 3 ? 1 : 0), MAX_LV);
+  return INTERVALS[Math.min(lv, 7)] + '天';
+}
+function retrievability(p) {
+  if (!p || p.stability == null || !p.last) return null;
+  const t = Math.max(0, (Date.now() - p.last) / DAY);
+  return Math.round(Math.pow(1 + 19 / 81 * t / p.stability, -0.5) * 100);
+}
+
 /* ================= 状态 ================= */
 function defaultState() {
   return {
@@ -132,6 +201,7 @@ let lastUndo = null;
 let revealed = false;
 let spellChecked = false;
 let pendingSpell = null;
+let listenOpts = [], listenAnswered = false;
 let current = null;
 
 function shuffle(a) {
@@ -269,25 +339,36 @@ function grade(g) {
   const w = current[0];
   const p = S.progress[w];
   const isNew = !p;
-  lastUndo = { w: w, prev: p ? { lv: p.lv, due: p.due, wrong: p.wrong, lastWrong: p.lastWrong } : null,
+  lastUndo = { w: w, prev: p ? JSON.parse(JSON.stringify(p)) : null,
     days: JSON.parse(JSON.stringify(S.days)),
     prevSG: Object.prototype.hasOwnProperty.call(sessionGrades, w) ? sessionGrades[w] : null };
 
   const now = Date.now();
-  let lv = p ? p.lv : 0, due, wrong = p ? (p.wrong || 0) : 0;
-  if (g === 3) {
-    lv = Math.min(lv + 1, MAX_LV);
-    due = now + INTERVALS[Math.max(0, lv - 1)] * DAY;
-    if (wrong > 0) wrong--;            // 答对一次，错词计数减一
-  } else if (g === 2) {
-    lv = Math.max(lv, 1);
-    due = now + DAY;
-  } else {
-    lv = 0;
-    due = now + DAY;
-    wrong++;                           // 答错计入错词本
+  const Fk = F();
+  let np;
+  if (Fk) {
+    try {
+      const out = Fk.next(buildFsrsCard(p, now), new Date(now), g);
+      np = {
+        due: out.card.due.getTime(),
+        stability: out.card.stability,
+        difficulty: out.card.difficulty,
+        last: now,
+        state: out.card.state,
+        lv: levelFromS(out.card.stability)
+      };
+    } catch (e) { /* 掉回兜底 */ }
   }
-  S.progress[w] = { lv: lv, due: due, wrong: wrong, lastWrong: g === 1 ? now : (p ? p.lastWrong : 0) };
+  if (!np) {
+    const lv = Math.min((p ? p.lv : 0) + (g === 3 ? 1 : 0), MAX_LV);
+    np = { due: now + INTERVALS[Math.min(lv, 7)] * DAY, lv: lv };
+  }
+  let wrong = p ? (p.wrong || 0) : 0;
+  if (g === 1) { wrong++; np.lastWrong = now; }
+  else if (g === 3 && wrong > 0) wrong--;
+  np.wrong = wrong;
+  if (g !== 1 && p && p.lastWrong) np.lastWrong = p.lastWrong;
+  S.progress[w] = np;
 
   // 记录本次会话评分，供轮次巩固使用（错词重刷模式除外）
   if (sessionMode === 'normal') sessionGrades[w] = g;
@@ -363,7 +444,7 @@ function updateTopbar() {
   $('today').textContent = '新词 ' + d.n + '/' + S.settings.newPerDay + ' · 复 ' + d.r;
   $('today').title = '今日目标：新词 ' + S.settings.newPerDay + ' 个';
   $('streak').textContent = '🔥 ' + streakDays();
-  $('mode').textContent = S.settings.mode === 'recog' ? '识别模式' : '拼写模式';
+  $('mode').textContent = { recog: '识别模式', spell: '拼写模式', listen: '听音辨意' }[S.settings.mode] || '识别模式';
 }
 
 function updateProgressbar() {
@@ -451,9 +532,9 @@ function renderCard() {
     const freq = current[3] === 1;
     const us = current[4] || '', sents = current[6] || [];
     const syns = current[7] || [];
-    const nextD = INTERVALS[Math.min(p ? p.lv : 0, MAX_LV - 1)];
+    const ret = retrievability(p);
     card.innerHTML =
-      '<div class="tagline">' + (round > 1 ? '第' + round + '轮巩固 · ' : '') + tagOf(p) + (freq ? ' · <span class="freqmark">高频</span>' : '') + '</div>' +
+      '<div class="tagline">' + (round > 1 ? '第' + round + '轮巩固 · ' : '') + tagOf(p) + (freq ? ' · <span class="freqmark">高频</span>' : '') + (ret != null ? ' · 记忆 ' + ret + '%' : '') + '</div>' +
       '<div class="word">' + esc(w) +
       ' <button id="speak" class="icon" title="发音 (S)">🔊</button>' +
       ' <button id="starbtn" class="icon' + ((S.stars[w] || 0) ? ' starred' : '') + '" title="收藏：点一下收藏，再点设为重点，再点取消">' + starLabel(w) + '</button></div>' +
@@ -469,15 +550,31 @@ function renderCard() {
       '</div>' +
       '<div class="actions">' +
       '<button class="grade g1 big" data-g="1">不认识 <kbd>1</kbd></button>' +
-      '<button class="grade g2 big" data-g="2">模糊 <kbd>2</kbd></button>' +
-      '<button class="grade g3 big" data-g="3">认识 +' + nextD + '天 <kbd>3</kbd></button>' +
+      '<button class="grade g2 big" data-g="2">模糊 ' + nextIntervalPreview(p, 2) + ' <kbd>2</kbd></button>' +
+      '<button class="grade g3 big" data-g="3">认识 +' + nextIntervalPreview(p, 3) + ' <kbd>3</kbd></button>' +
       (lastUndo ? '<button id="undobtn" class="big ghost" title="撤销上一步 (Ctrl+Z)">↩ 撤销</button>' : '') +
       '</div>';
+  } else if (S.settings.mode === 'listen') {
+    listenOpts = buildListenOptions(current);
+    listenAnswered = false;
+    card.innerHTML =
+      '<div class="tagline">' + (round > 1 ? '第' + round + '轮巩固 · ' : '') + '听音辨意 · 听读音选释义</div>' +
+      '<button id="replay" class="primary big">🔊 播放读音 <kbd>空格</kbd></button>' +
+      '<div id="lopts" class="lopts">' +
+      listenOpts.map(function (o, i) {
+        return '<button class="big lopt" data-i="' + i + '"><span class="lnum">' + (i + 1) + '</span>' + esc(o.text) + '</button>';
+      }).join('') +
+      '</div>' +
+      '<div id="lfb" class="spellfb"></div>' +
+      '<div class="actions"><button id="lnext" class="primary big hidden">下一个 <kbd>回车</kbd></button></div>';
   } else {
+    const cloze = clozeHint(w, current[6]);
     card.innerHTML =
       '<div class="tagline">拼写 · ' + tagOf(p) + '</div>' +
       '<div class="meaning prompt">' + esc(defs.join('\n')) + '</div>' +
-      '<div class="hint">' + hintPattern(w) + '</div>' +
+      (cloze
+        ? '<div class="sent cloze"><span class="en">' + esc(cloze) + '</span></div>'
+        : '<div class="hint">' + hintPattern(w) + '</div>') +
       '<input id="spell" class="spell" autocomplete="off" autocapitalize="off" ' +
       'spellcheck="false" placeholder="输入单词后回车">' +
       '<div id="spellfb" class="spellfb"></div>' +
@@ -495,6 +592,13 @@ function renderCard() {
   if (sb) sb.addEventListener('click', function () { starCycle(w); });
   const sk = $('skip');
   if (sk) sk.addEventListener('click', function () { showSpellAnswer(false, true); });
+  const rp = $('replay');
+  if (rp) rp.addEventListener('click', function () { speak(w); });
+  const nl = $('lnext');
+  if (nl) nl.addEventListener('click', function () { grade(pendingSpell); });
+  card.querySelectorAll('.lopt').forEach(function (b) {
+    b.addEventListener('click', function () { answerListen(+b.dataset.i); });
+  });
   const rv = $('reveal');
   if (rv) rv.addEventListener('click', reveal);
   const ub = $('undobtn');
@@ -503,7 +607,8 @@ function renderCard() {
     b.addEventListener('click', function () { grade(+b.dataset.g); });
   });
 
-  if (S.settings.mode === 'recog' && S.settings.autoSpeak) speak(w);
+  if (S.settings.mode === 'listen') speak(w);
+  else if (S.settings.mode === 'recog' && S.settings.autoSpeak) speak(w);
 }
 
 function reveal() {
@@ -512,6 +617,52 @@ function reveal() {
   $('meaning').classList.remove('hidden');
   const rr = $('revealrow');
   if (rr) rr.classList.add('hidden');
+}
+
+/* 听音辨意：正确释义 + 3 个随机干扰项 */
+function buildListenOptions(entry) {
+  const correctText = entry[1].join('；').slice(0, 40);
+  const opts = [{ ok: true, text: correctText }];
+  let guard = 0;
+  while (opts.length < 4 && guard++ < 300) {
+    const it = WORDS[(Math.random() * WORDS.length) | 0];
+    if (!it || it[0] === entry[0] || !it[1][0]) continue;
+    const t = it[1].join('；').slice(0, 40);
+    if (t === correctText || opts.some(function (o) { return o.text === t; })) continue;
+    opts.push({ ok: false, text: t });
+  }
+  return shuffle(opts);
+}
+function answerListen(i) {
+  if (listenAnswered || !listenOpts[i]) return;
+  listenAnswered = true;
+  const ok = listenOpts[i].ok;
+  pendingSpell = ok ? 3 : 1;
+  document.querySelectorAll('#lopts .lopt').forEach(function (b, j) {
+    b.disabled = true;
+    if (listenOpts[j] && listenOpts[j].ok) b.classList.add('lopt-ok');
+    else if (j === i) b.classList.add('lopt-bad');
+  });
+  const fb = $('lfb');
+  fb.innerHTML =
+    (ok ? '<span class="ok">✓ 正确</span>' : '<span class="bad">✗ 正确答案：</span>') +
+    ' <span class="word small">' + esc(current[0]) + ' <button id="speak2" class="icon">🔊</button></span>' +
+    (current[4] || current[5] ? phonHtml({ us: current[4], uk: current[5] }) : '') +
+    '<div class="meaning">' + defsHtml(current[1]) +
+    (current[6] && current[6].length ? sentHtml(current[6][0]) : '') + '</div>';
+  fb.querySelector('#speak2').addEventListener('click', function () { speak(current[0]); });
+  const nl = $('lnext');
+  if (nl) nl.classList.remove('hidden');
+  speak(current[0]);
+}
+
+/* 例句挖空：例句含目标词时，用挖空句替代首字母提示（语境线索，不带中文防泄底） */
+function clozeHint(w, sents) {
+  if (sents && sents.length) {
+    const re = new RegExp('\\b' + w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'i');
+    if (re.test(sents[0][0])) return sents[0][0].replace(re, '＿＿＿');
+  }
+  return null;
 }
 
 function hintPattern(w) {
@@ -1110,7 +1261,8 @@ function openSettings() {
     }).join('') + '</select></div>' +
     '<div class="form-row"><label>学习模式</label>' +
     '<select id="set-mode"><option value="recog"' + (s.mode === 'recog' ? ' selected' : '') + '>识别（看词选义）</option>' +
-    '<option value="spell"' + (s.mode === 'spell' ? ' selected' : '') + '>拼写（看义写词）</option></select></div>' +
+    '<option value="spell"' + (s.mode === 'spell' ? ' selected' : '') + '>拼写（看义写词）</option>' +
+    '<option value="listen"' + (s.mode === 'listen' ? ' selected' : '') + '>听音辨意（听音选义）</option></select></div>' +
     '<div class="form-row"><label>自动发音</label>' +
     '<input type="checkbox" id="set-speak"' + (s.autoSpeak ? ' checked' : '') + '></div>' +
     '<div class="form-row"><label>主题</label>' +
@@ -1121,6 +1273,7 @@ function openSettings() {
     '<div class="actions" style="justify-content:flex-start">' +
     '<button id="set-export" class="big">导出备份</button>' +
     '<button id="set-import" class="big">导入备份</button>' +
+    '<button id="set-exportnl" class="big">导出生词本</button>' +
     '<button id="set-reset" class="big danger">清空本书进度</button>' +
     '</div>' +
     '<input type="file" id="set-file" accept="application/json" class="hidden">' +
@@ -1139,6 +1292,7 @@ function openSettings() {
     S.settings.theme = e.target.value; save(); applyTheme();
   });
   $('set-export').addEventListener('click', exportData);
+  $('set-exportnl').addEventListener('click', exportNotebook);
   $('set-import').addEventListener('click', function () { $('set-file').click(); });
   $('set-file').addEventListener('change', function (e) {
     if (e.target.files[0]) importData(e.target.files[0]);
@@ -1160,6 +1314,22 @@ function exportData() {
   a.click();
   setTimeout(function () { URL.revokeObjectURL(a.href); }, 5000);
   toast('备份已导出');
+}
+
+function exportNotebook() {
+  const lines = [];
+  for (const it of WORDS) {
+    const p = S.progress[it[0]];
+    if (p && (p.lv === 0 || (p.wrong || 0) > 0)) lines.push(it[0] + '\t' + it[1].join('；'));
+  }
+  if (!lines.length) { toast('生词本是空的'); return; }
+  const blob = new Blob(['\ufeff单词\t释义\n' + lines.join('\n')], { type: 'text/plain;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'vocab-notebook-' + todayStr() + '.txt';
+  a.click();
+  setTimeout(function () { URL.revokeObjectURL(a.href); }, 5000);
+  toast('已导出 ' + lines.length + ' 个生词');
 }
 
 function importData(file) {
@@ -1233,6 +1403,16 @@ function wireUI() {
       else if (e.key.toLowerCase() === 's' && current) speak(current[0]);
       else if (e.key.toLowerCase() === 'f' && current) starCycle(current[0]);
       else if (e.key.toLowerCase() === 'm') toggleMode();
+    } else if (S.settings.mode === 'listen') {
+      if (!listenAnswered) {
+        if (e.key >= '1' && e.key <= '4') { e.preventDefault(); answerListen(+e.key - 1); }
+        else if (e.code === 'Space' || e.key === ' ') { e.preventDefault(); if (current) speak(current[0]); }
+        else if (e.key.toLowerCase() === 'm') toggleMode();
+      } else if (e.key === 'Enter' || e.code === 'Space' || e.key === ' ') {
+        e.preventDefault(); grade(pendingSpell);
+      } else if (e.key.toLowerCase() === 'm') {
+        toggleMode();
+      }
     } else {
       if (e.key === 'Enter') { e.preventDefault(); spellChecked ? grade(pendingSpell) : checkSpell(); }
       else if ((e.code === 'Space' || e.key === ' ') && spellChecked) { e.preventDefault(); grade(pendingSpell); }
@@ -1242,10 +1422,11 @@ function wireUI() {
 }
 
 function toggleMode() {
-  S.settings.mode = S.settings.mode === 'recog' ? 'spell' : 'recog';
+  const order = ['recog', 'spell', 'listen'];
+  S.settings.mode = order[(order.indexOf(S.settings.mode) + 1) % 3];
   save();
   renderCard();
-  toast(S.settings.mode === 'recog' ? '识别模式：看单词想意思' : '拼写模式：看释义写单词');
+  toast({ recog: '识别模式：看单词想意思', spell: '拼写模式：看释义写单词', listen: '听音辨意：听读音选释义' }[S.settings.mode]);
 }
 
 /* ================= 启动 ================= */
