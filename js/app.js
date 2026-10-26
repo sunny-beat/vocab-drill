@@ -11,24 +11,21 @@ const BOOKS = {
 };
 const PAGES = ['study', 'books', 'dict', 'list'];
 const LS_KEY = 'vocabdrill.v2';
+const APP_VER = '3.0.0';
 
-/* ================= FSRS-5 记忆算法（ts-fsrs 本地封装） ================= */
+/* ================= FSRS-6 记忆算法（ts-fsrs 本地全局包） ================= */
 /* 评分 1=Again 2=Hard 3=Good；进度字段：{ due, stability, difficulty, last, state, lv, wrong, lastWrong } */
 let _FSRS = null;
 function F() {
   if (_FSRS) return _FSRS;
-  if (window.FSRSLIB) {
-    _FSRS = window.FSRSLIB.fsrs(window.FSRSLIB.generatorParameters({ enable_fuzz: true, enable_short_term: false }));
-    return _FSRS;
-  }
-  // 静态 module 标签失效时的动态导入兜底
-  if (!window._fsrsLoading) {
-    window._fsrsLoading = import('./vendor/fsrs.js').then(function (m) {
-      window.FSRSLIB = m;
-      _FSRS = m.fsrs(m.generatorParameters({ enable_fuzz: true, enable_short_term: false }));
-    }).catch(function () { window._fsrsLoading = null; });
-  }
-  return null;
+  const lib = window.FSRS;
+  if (!lib) return null;   // 未加载时各处自动降级到 INTERVALS 表
+  _FSRS = lib.fsrs(lib.generatorParameters({
+    enable_fuzz: true,
+    enable_short_term: false,
+    request_retention: (S.settings && S.settings.retention) || 0.9
+  }));
+  return _FSRS;
 }
 function levelFromS(s) {
   return Math.max(0, Math.min(7, Math.floor(Math.log2(s + 1))));
@@ -61,7 +58,7 @@ function buildFsrsCard(p, now) {
       state: 2
     };
   }
-  return window.FSRSLIB.createEmptyCard(new Date(now));
+  return window.FSRS ? window.FSRS.createEmptyCard(new Date(now)) : { due: new Date(now), stability: 0, difficulty: 0, state: 0 };
 }
 function nextIntervalPreview(p, g) {
   const Fk = F();
@@ -75,8 +72,16 @@ function nextIntervalPreview(p, g) {
   const lv = Math.min((p ? p.lv : 0) + (g === 3 ? 1 : 0), MAX_LV);
   return INTERVALS[Math.min(lv, 7)] + '天';
 }
+/* 记忆留存率：优先用库内 FSRS-6 forgetting_curve（衰减系数随参数走），否则退回 FSRS-5 公式 */
 function retrievability(p) {
   if (!p || p.stability == null || !p.last) return null;
+  const Fk = F();
+  if (Fk && typeof Fk.get_retrievability === 'function') {
+    try {
+      const r = Fk.get_retrievability(buildFsrsCard(p, Date.now()), new Date(), false);
+      if (typeof r === 'number' && isFinite(r)) return Math.round(r * 100);
+    } catch (e) { /* 兜底 */ }
+  }
   const t = Math.max(0, (Date.now() - p.last) / DAY);
   return Math.round(Math.pow(1 + 19 / 81 * t / p.stability, -0.5) * 100);
 }
@@ -84,7 +89,7 @@ function retrievability(p) {
 /* ================= 状态 ================= */
 function defaultState() {
   return {
-    settings: { book: 'cet6', mode: 'recog', newPerDay: 20, autoSpeak: false, theme: 'auto' },
+    settings: { book: 'cet6', mode: 'recog', newPerDay: 20, autoSpeak: false, theme: 'auto', retention: 0.9 },
     progress: {},   // word -> { lv, due, wrong, lastWrong }
     days: {},       // 'YYYY-MM-DD' -> { n, r }
     books: {},      // bookId -> { chapter: 当前章节下标 }
@@ -550,11 +555,10 @@ function renderCard() {
       '</div>' +
       '<div class="actions">' +
       '<button class="grade g1 big" data-g="1">不认识 <kbd>1</kbd></button>' +
-      '<button class="grade g2 big" data-g="2">模糊 ' + nextIntervalPreview(p, 2) + ' <kbd>2</kbd></button>' +
+      '<button class="grade g2 big" data-g="2">模糊 ≈' + nextIntervalPreview(p, 2) + ' <kbd>2</kbd></button>' +
       '<button class="grade g3 big" data-g="3">认识 +' + nextIntervalPreview(p, 3) + ' <kbd>3</kbd></button>' +
       (lastUndo ? '<button id="undobtn" class="big ghost" title="撤销上一步 (Ctrl+Z)">↩ 撤销</button>' : '') +
-      '</div>';
-  } else if (S.settings.mode === 'listen') {
+      '</div>';  } else if (S.settings.mode === 'listen') {
     listenOpts = buildListenOptions(current);
     listenAnswered = false;
     card.innerHTML =
@@ -1263,12 +1267,24 @@ function openSettings() {
     '<select id="set-mode"><option value="recog"' + (s.mode === 'recog' ? ' selected' : '') + '>识别（看词选义）</option>' +
     '<option value="spell"' + (s.mode === 'spell' ? ' selected' : '') + '>拼写（看义写词）</option>' +
     '<option value="listen"' + (s.mode === 'listen' ? ' selected' : '') + '>听音辨意（听音选义）</option></select></div>' +
+    '<div class="form-row"><label>目标记忆率</label>' +
+    '<select id="set-ret" title="越高复习越频繁、记得越牢">' +
+    [[0.8, '80%（宽松·省时）'], [0.85, '85%'], [0.9, '90%（推荐）'], [0.95, '95%（严格·最牢）']].map(function (o) {
+      return '<option value="' + o[0] + '"' + (Number(s.retention || 0.9) === o[0] ? ' selected' : '') + '>' + o[1] + '</option>';
+    }).join('') + '</select></div>' +
     '<div class="form-row"><label>自动发音</label>' +
     '<input type="checkbox" id="set-speak"' + (s.autoSpeak ? ' checked' : '') + '></div>' +
     '<div class="form-row"><label>主题</label>' +
     '<select id="set-theme"><option value="auto"' + (s.theme === 'auto' ? ' selected' : '') + '>跟随系统</option>' +
     '<option value="light"' + (s.theme === 'light' ? ' selected' : '') + '>浅色</option>' +
     '<option value="dark"' + (s.theme === 'dark' ? ' selected' : '') + '>深色</option></select></div>' +
+    '<h3>应用</h3>' +
+    '<div class="actions" style="justify-content:flex-start">' +
+    '<button id="set-install" class="big">安装到桌面</button>' +
+    '<button id="set-update" class="big" title="清空离线缓存并重新加载">立即更新</button>' +
+    '</div>' +
+    '<p class="muted" style="margin-top:8px;font-size:12px">版本 v' + APP_VER +
+    (location.protocol === 'file:' ? ' · 本地文件模式' : ' · 已支持离线使用') + '</p>' +
     '<h3>数据</h3>' +
     '<div class="actions" style="justify-content:flex-start">' +
     '<button id="set-export" class="big">导出备份</button>' +
@@ -1285,13 +1301,23 @@ function openSettings() {
   $('set-mode').addEventListener('change', function (e) {
     S.settings.mode = e.target.value; save(); renderCard();
   });
-  $('set-speak').addEventListener('change', function (e) {
-    S.settings.autoSpeak = e.target.checked; save();
+  $('set-ret').addEventListener('change', function (e) {
+    S.settings.retention = +e.target.value;
+    _FSRS = null;          // 参数变了，重建调度器
+    save(); renderCard();
+    toast('目标记忆率 ' + Math.round(S.settings.retention * 100) + '%：间隔已按新参数调整');
+  });
+  $('set-speak').addEventListener('change', function (e) {    S.settings.autoSpeak = e.target.checked; save();
   });
   $('set-theme').addEventListener('change', function (e) {
     S.settings.theme = e.target.value; save(); applyTheme();
   });
   $('set-export').addEventListener('click', exportData);
+  $('set-install').addEventListener('click', installApp);
+  $('set-update').addEventListener('click', function () {
+    if (!confirm('将清空离线缓存并重新加载，学习进度不受影响。继续吗？')) return;
+    updateCache();
+  });
   $('set-exportnl').addEventListener('click', exportNotebook);
   $('set-import').addEventListener('click', function () { $('set-file').click(); });
   $('set-file').addEventListener('change', function (e) {
@@ -1347,6 +1373,47 @@ function importData(file) {
 }
 
 function closeModal() { $('modal').classList.add('hidden'); }
+
+/* ================= PWA：离线缓存与安装 ================= */
+let installPrompt = null;
+window.addEventListener('beforeinstallprompt', function (e) {
+  e.preventDefault();
+  installPrompt = e;
+});
+function registerSW() {
+  // file:// 不支持 Service Worker，双击打开时自动跳过（离线本来就成立）
+  if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;
+  navigator.serviceWorker.register('sw.js').catch(function () { /* 注册失败不影响使用 */ });
+}
+function installApp() {
+  if (!installPrompt) {
+    toast('此浏览器暂不支持一键安装，可用菜单「添加到主屏幕」');
+    return;
+  }
+  installPrompt.prompt();
+  installPrompt.userChoice.then(function (r) {
+    if (r && r.outcome === 'accepted') toast('已安装到桌面');
+    installPrompt = null;
+  });
+}
+function updateCache() {
+  if (!('serviceWorker' in navigator) || location.protocol === 'file:') {
+    location.reload();
+    return;
+  }
+  navigator.serviceWorker.getRegistration().then(function (reg) {
+    const doClear = function () {
+      caches.keys().then(function (keys) {
+        return Promise.all(keys.map(function (k) { return caches.delete(k); }));
+      }).then(function () { location.reload(); });
+    };
+    if (reg) {
+      (reg.active || reg.waiting || reg.installing || {}).postMessage?.('clear');
+      reg.update();
+      setTimeout(doClear, 300);
+    } else doClear();
+  }).catch(function () { location.reload(); });
+}
 
 /* ================= 主题 ================= */
 function applyTheme() {
@@ -1433,6 +1500,7 @@ function toggleMode() {
 (async function init() {
   applyTheme();
   wireUI();
+  registerSW();
   try {
     const saved = S.session;
     await buildQueue();
