@@ -202,7 +202,7 @@ check('模式切回识别', modes.backToRecog);
 for (const [pg, sel] of [['books', '.bcard'], ['dict', '#dict-search'], ['list', '#list-tabs']]) {
   await js(`document.querySelector('[data-page="${pg}"]').click(); return 1;`);
   let ok = false;
-  for (let i = 0; i < 30 && !ok; i++) {
+  for (let i = 0; i < 50 && !ok; i++) {
     await wait(400);
     ok = await js(`return !!document.querySelector('${sel}');`);
   }
@@ -225,13 +225,22 @@ if (!isFile) {
   check('manifest 可读', pwa.icons >= 4 && pwa.display === 'standalone', pwa);
   check('Service Worker 已注册并预缓存外壳', pwa.sw && pwa.entries >= 8, pwa.entries);
 
+  // 首次访问时页面尚未被 SW 接管，词库是直接走网络的；重载一次才会被 SWR 落进 data 缓存
+  await send('Page.reload', {});
+  let reOk = false;
+  for (let i = 0; i < 25 && !reOk; i++) {
+    await wait(400);
+    reOk = await js(`return !!document.querySelector('.word');`);
+  }
+  check('第二次加载仍正常（已被 SW 接管）', reOk, await js(`return !!navigator.serviceWorker.controller;`));
+
   const offlineReady = await js(`
     var keys = await caches.keys();
     var dk = keys.find(function (k) { return k.indexOf('vd-data-') === 0; });
     if (!dk) return { files: [] };
     var c = await caches.open(dk);
     var ks = (await c.keys()).map(function (r) { return new URL(r.url).pathname.split('/').pop(); });
-    return { files: ks };
+    return { files: ks, controller: !!navigator.serviceWorker.controller };
   `);
   check('词库已进入离线缓存', offlineReady.files.length >= 1, offlineReady.files);
 

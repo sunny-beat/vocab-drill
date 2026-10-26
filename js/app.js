@@ -344,6 +344,8 @@ function restoreSession(s) {
     save();
   }
   renderCard();
+  // 立刻回写快照：不然连着刷新两次，第二次就找不到可续的会话、掉回封面
+  saveSession();
 }
 
 /* ================= 调度 ================= */
