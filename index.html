@@ -2,7 +2,7 @@
 <html lang="zh-CN" data-theme="auto">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#f5f1e8" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#15171a" media="(prefers-color-scheme: dark)">
 <meta name="description" content="纯本地背单词：FSRS 记忆调度、章节速刷、错词本、听音辨意，离线可用。">
@@ -12,19 +12,26 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="单词速刷">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%233e8e68'/%3E%3Ctext x='50' y='70' font-size='52' text-anchor='middle'%3E%E2%9A%A1%3C/text%3E%3C/svg%3E">
+<link rel="icon" href="icons/icon.svg">
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 <header id="topbar">
-  <div class="tb-group">
-    <span class="logo">⚡ 单词速刷</span>
+  <div class="tb-group tb-left">
+    <span class="brand">
+      <span class="brand-mark">⚡</span>
+      <span class="brand-name">单词速刷</span>
+    </span>
     <select id="book" title="切换词书"></select>
-    <button id="mode" class="chip" title="切换学习模式（快捷键 M）">识别模式</button>
   </div>
-  <div class="tb-group">
-    <span id="today" class="muted"></span>
-    <span id="streak" class="chip" title="连续打卡天数">🔥 0</span>
+  <div class="tb-group tb-right">
+    <div id="modeseg" class="modeseg" role="group" aria-label="学习模式">
+      <button data-mode="recog" title="识别：看词选义（快捷键 M 循环）">识别</button>
+      <button data-mode="spell" title="拼写：看义写词">拼写</button>
+      <button data-mode="listen" title="听音：听音选义">听音</button>
+    </div>
+    <span id="today" class="pill" title="今日目标"></span>
+    <span id="streak" class="pill fire" title="连续打卡天数">🔥 0</span>
     <button id="btn-stats" class="icon" title="统计与生词本">📊</button>
     <button id="btn-settings" class="icon" title="设置">⚙️</button>
   </div>
@@ -33,14 +40,20 @@
 <main>
   <!-- 学习页 -->
   <section id="page-study" class="page">
-    <div id="study-sub">
-      <span id="study-sub-text"></span>
-      <button id="sub-chapters" class="chip" title="选择章节">章节</button>
+    <!-- 封面 / 今日任务 -->
+    <div id="hero" class="hero hidden"></div>
+
+    <!-- 卡片区 -->
+    <div id="study-main" class="hidden">
+      <div id="study-sub">
+        <span id="study-sub-text"></span>
+        <button id="sub-chapters" class="chip" title="选择章节">章节</button>
+      </div>
+      <div id="pbar"><div id="pbar-in"></div></div>
+      <section id="card" class="card">
+        <p class="muted center">正在加载词库…</p>
+      </section>
     </div>
-    <div id="pbar"><div id="pbar-in"></div></div>
-    <section id="card" class="card">
-      <p class="muted center">正在加载词库…</p>
-    </section>
   </section>
 
   <!-- 词书分级页 -->
@@ -78,18 +91,31 @@
   <span><kbd>M</kbd> 切换模式</span>
   <span><kbd>F</kbd> 收藏</span>
   <span><kbd>Ctrl+Z</kbd> 撤销</span>
+  <button id="btn-keys" class="linkhint" title="全部快捷键（?）">全部 ?</button>
 </footer>
 
 <nav id="nav">
-  <button data-page="study" class="active"><span class="ni">📖</span>学习</button>
-  <button data-page="books"><span class="ni">📚</span>词书</button>
-  <button data-page="dict"><span class="ni">🔍</span>查词</button>
-  <button data-page="list"><span class="ni">🗂️</span>单词本</button>
+  <button data-page="study" class="active">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H11v16H5.5A1.5 1.5 0 0 1 4 18.5z"/><path d="M20 5.5A1.5 1.5 0 0 0 18.5 4H13v16h5.5A1.5 1.5 0 0 0 20 18.5z"/></svg>
+    <span>学习</span>
+  </button>
+  <button data-page="books">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.2 3.4 7.4 12 11.6l8.6-4.2z"/><path d="M3.4 12 12 16.2 20.6 12"/><path d="M3.4 16.6 12 20.8l8.6-4.2"/></svg>
+    <span>词书</span>
+  </button>
+  <button data-page="dict">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.4"/><path d="m16 16 4.2 4.2"/></svg>
+    <span>查词</span>
+  </button>
+  <button data-page="list">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 4h11v16.5L12 16.4 6.5 20.5z"/></svg>
+    <span>单词本</span>
+  </button>
 </nav>
 
 <div id="modal" class="modal hidden">
   <div class="modal-box">
-    <button id="modal-x" class="icon modal-x" title="关闭">✕</button>
+    <button id="modal-x" class="icon modal-x" title="关闭 (Esc)">✕</button>
     <div id="modal-body"></div>
   </div>
 </div>

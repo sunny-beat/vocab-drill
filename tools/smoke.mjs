@@ -99,13 +99,42 @@ function check(name, ok, detail) {
 
 // ---------- 1. 加载 ----------
 await send('Page.navigate', { url: URL_ARG });
-// 线上（GitHub Pages）首次加载词库可能要几秒，轮询等卡片出现而不是死等固定时长
+// 线上（GitHub Pages）首次加载词库可能要几秒，轮询等封面/卡片出现而不是死等固定时长
 let ready = false;
 for (let i = 0; i < 40 && !ready; i++) {
   await wait(500);
-  ready = await js(`return !!(document.querySelector('.word') || document.querySelector('.bad'));`);
+  ready = await js(`return !!(document.querySelector('#hero-start') || document.querySelector('.word') || document.querySelector('.bad'));`);
 }
 check('FSRS 已加载', await js('return !!window.FSRS && Object.keys(window.FSRS).length > 10;'));
+
+// 封面（今日任务）：首次进入应落地在这里
+const hero = await js(`
+  var h = document.getElementById('hero');
+  if (!h || h.classList.contains('hidden')) return null;
+  return {
+    h1: (h.querySelector('h1') || {}).innerText || '',
+    stats: Array.from(h.querySelectorAll('.hstat b')).map(b => b.innerText),
+    forecast: h.querySelectorAll('.forecast .fc').length,
+    cta: (document.getElementById('hero-start') || {}).innerText || ''
+  };
+`);
+check('封面页落地', !!hero, hero && { h1: hero.h1, cta: hero.cta });
+if (hero) {
+  check('封面三指标 + 7 天预测', hero.stats.length === 3 && hero.forecast === 7, hero.stats);
+}
+// 从封面进入学习
+await js(`
+  var b = document.getElementById('hero-start');
+  if (b) b.click();
+  await new Promise(r => setTimeout(r, 600));
+  return 1;
+`);
+let cardReady = false;
+for (let i = 0; i < 20 && !cardReady; i++) {
+  await wait(300);
+  cardReady = await js(`return !!document.querySelector('.word');`);
+}
+check('点击开始进入卡片', cardReady);
 
 const first = await js(`
   var w = document.querySelector('.word');
@@ -142,26 +171,30 @@ const ret = await js(`
 `);
 check('记忆留存率按 FSRS-6 曲线（t=S 应≈90%）', Math.abs(ret - 90) <= 2, ret);
 
-// ---------- 4. 三模式 ----------
+// ---------- 4. 三模式（顶栏分段控件直达） ----------
 const modes = await js(`
   var out = {};
-  document.getElementById('mode').click();      // -> 拼写
-  await new Promise(r => setTimeout(r, 250));
+  var seg = function (m) { document.querySelector('#modeseg button[data-mode="' + m + '"]').click(); };
+  seg('spell');
+  await new Promise(r => setTimeout(r, 350));
   out.spell = !!document.getElementById('spell');
+  out.spellOn = document.querySelector('#modeseg button[data-mode="spell"]').classList.contains('on');
   document.getElementById('skip').click();
-  await new Promise(r => setTimeout(r, 200));
+  await new Promise(r => setTimeout(r, 250));
   out.spellFb = (document.getElementById('spellfb').innerText || '').length > 0;
-  document.getElementById('next').click();
-  await new Promise(r => setTimeout(r, 250));
-  document.getElementById('mode').click();      // -> 听音
-  await new Promise(r => setTimeout(r, 400));
+  var nx = document.getElementById('next') || document.getElementById('lnext');
+  if (nx) nx.click();
+  await new Promise(r => setTimeout(r, 300));
+  seg('listen');
+  await new Promise(r => setTimeout(r, 500));
   out.listen = document.querySelectorAll('#lopts .lopt').length;
-  document.getElementById('mode').click();      // -> 识别
-  await new Promise(r => setTimeout(r, 250));
+  seg('recog');
+  await new Promise(r => setTimeout(r, 350));
   out.backToRecog = !!document.querySelector('.grade');
   return out;
 `);
 check('拼写模式可用', modes.spell && modes.spellFb, modes.spellFb);
+check('分段控件高亮当前模式', modes.spellOn);
 check('听音辨意 4 选项', modes.listen === 4, modes.listen);
 check('模式切回识别', modes.backToRecog);
 

@@ -1,11 +1,11 @@
 # 词汇训练 (Vocab Drill) 交接文档
 
 > 交接对象：后续接手维护/迭代的 AI Agent 或开发者
-> 最后更新：2026-10-26（v3.0.0：FSRS 真正生效 + PWA 离线安装）
+> 最后更新：2026-10-26（v3.2.0：今日任务封面 + 视觉/流畅性重做）
 
 ## 1. 项目一句话
 
-纯本地、零构建、零后端的键盘流背单词单页应用。在线地址：**https://sunny-beat.github.io/vocab-drill/**（GitHub Pages 自动部署，可安装为 PWA）；本地双击 `index.html` 同样可用。
+纯本地、零构建、零后端的键盘流背单词单页应用：落地是「今日任务」封面（目标环 + 待复习 + 7 天预测），一键进入卡片速刷。在线地址：**https://sunny-beat.github.io/vocab-drill/**（GitHub Pages 自动部署，可安装为 PWA）；本地双击 `index.html` 同样可用。
 
 ## 2. 技术栈与架构约束
 
@@ -70,6 +70,13 @@ vocab-drill/
 
 | 机制 | 函数/位置 | 说明 |
 |---|---|---|
+| **封面/今日任务** | `renderHero()` `prepareBook()` `dueCount()` `forecastBuckets()` | 学习页有两个互斥状态：`#hero`（封面）和 `#study-main`（卡片区）。`renderCard()` 会隐藏 hero、显示 main；`renderHero()` 反之。所有"重新开始一批"的入口都要注意当前处于哪个状态 |
+| **开始学习** | `startSession()` | 封面的按钮/空格键走这里：`buildQueue({})` → `renderCard()`。有当日会话时 init 直接续背，不经过封面 |
+| 启动流程 | `init()` | `prepareBook()` 只准备词书（不建队列）→ 有 `S.session` 且是同书同天 → `buildQueue()+restoreSession(快照)`；否则 `renderHero()`。**快照必须在 buildQueue 之前取**（buildQueue 会清 `S.session`） |
+| 模式切换 | `setMode(m)` / `toggleMode()` | 顶栏 `#modeseg` 三个按钮直达，`M` 键循环。**封面/完成页时不能 renderCard**（`onCard` 判断） |
+| 卡片动效 | `renderCard(dir)` | `dir` 传评分值：1/2 → `enter-down`（从上滑入），3 → `enter-up`（从下滑入） |
+| 快捷键表单 | `openKeys()` | `?` 或页脚「全部 ?」或设置里「快捷键」，12 条 |
+| 章节字母导航 | `renderBooksPage()` 内 `.chnav` | 按首字母生成跳转按钮，`scrollIntoView` 定位 |
 | FSRS 调度 | `F()` `buildFsrsCard()` `grade()` | 封装 `window.FSRS`（fsrs.global.js），`enable_short_term:false`（天级调度，当日重复交给轮次巩固）。评分 1/2/3 → Rating Again/Hard/Good。**未加载时全链路自动降级到 INTERVALS 表** |
 | 目标记忆率 | `S.settings.retention` + `F()` | 80/85/90/95%，改设置时置 `_FSRS=null` 重建调度器 |
 | 间隔预览 | `nextIntervalPreview(p, g)` | 评分按钮上的 `认识 +3天` / `模糊 ≈2天` |
@@ -90,8 +97,8 @@ vocab-drill/
 **本地测试**：`python -m http.server 8642 --bind 127.0.0.1`（后台跑） + `node tools/smoke.mjs`。
 
 `tools/smoke.mjs` 是自带的冒烟测试：用 Node 22 内置 WebSocket 直连 Edge 的 CDP（**不需要装 Playwright**），
-用独立临时 profile + 禁用 HTTP 缓存，断言 FSRS 加载、评分落库、记忆留存率、三模式、四页面、manifest/SW 外壳预缓存、
-词库进离线缓存、断网重载仍可用、运行期无异常。两个协议都要跑：
+用独立临时 profile + 禁用 HTTP 缓存，断言 封面落地与三指标、开始学习、FSRS 加载、评分落库、记忆留存率、三模式（分段控件）、四页面、
+manifest/SW 外壳预缓存、词库进离线缓存、断网重载仍可用、运行期无异常。两个协议都要跑：
 
 ```bash
 node tools/smoke.mjs "http://127.0.0.1:8642/index.html"
@@ -119,15 +126,20 @@ node tools/smoke.mjs "file:///E:/.../vocab-drill/index.html"     # file:// 自�
 7. **SW 缓存版本**：`sw.js` 的 `VER` 是缓存名的一部分（shell 与 data 各一份），activate 时清掉旧 `vd-shell-*` / `vd-data-*`；改前端资源必须同时提 `sw.js` 的 `VER` 与 `app.js` 的 `APP_VER`，否则用户会拿到新旧混合文件。救急入口：设置 → 立即更新（清缓存重载，不动进度）。
 8. **Pages 上预缓存大文件会偶发失败**（连接被掐）。所以词库不放在 install 预缓存里，走首次访问的 SWR；改 `sw.js` 时别把 `data/*.js` 塞回 `CORE` 数组。
 9. 用户实际在用：**`file://` 打开的多个标签页**。改动后提醒用户 F5；绝不主动清用户的 localStorage。
+10. **学习页是双态**（hero / study-main）。新加"重建队列"的入口时，先判断当前在哪个状态：封面里重建会直接把用户扔进卡片；封面里调 `renderCard()` 则会因为 `QUEUE` 为空走到完成页。
+11. 样式改动集中在 `css/style.css` 末尾的「v3.1 视觉与流畅性升级」段（hero/开关/面板/动效）。改顶栏、底栏、卡片布局时注意这段覆盖了前面的基础规则，别在两处各写一半。
+12. 移动端（`max-width:560px`）会隐藏键盘提示，并压缩顶栏/正文内边距；改布局时两档都要看一眼截图。
+13. 对标产品取舍（这一轮刻意借鉴的）：墨墨的「今日任务 + 数据量化」→ 封面的目标环与 7 天预测；不背单词的「沉浸卡片 + 极简」→ 卡片撑满居中、动效、留白；Anki 的「全键盘 + 间隔预览」→ 已有，本轮补了 `?` 快捷键表和方向感动效。**刻意没做**：图片联想（百词斩，需图片资源）、社交打卡（扇贝，与本地单机定位冲突）。
 
 ## 8. 待办/建议方向（按优先级）
 
 1. **错词听写模式**：错词本 + 听音拼写组合（听音辨意在 4 选 1，听写更难也更像考试）。
-2. **自定义词库导入**：粘贴/上传词表 → 生成 `VD_DATA.custom`（沿用现有 script 数据格式），导入后自动出现在词书下拉里。
-3. **FSRS 参数个性化（优化器）**：目前只有目标记忆率可调；积累复习记录后可接 ts-fsrs 的 optimizer 反推 w 参数（需要 review log，现在没存——要做得先在 `grade()` 里落 log）。
-4. **数据云同步**（可选）：目前仅 localStorage + 手动导出/导入 JSON。
-5. 词库扩展：源仓库还有托福/雅思/专四专八/GMAT（`convert.py` 的 `books` 列表加条目即可，下载用 jsDelivr）。注意 PWA 预缓存列表要同步加文件。
-6. 统计页可以加「未来 7 天到期量」预测（纯本地算，`progress[*].due` 现成）。
+2. **自定义词库导入**：粘贴/上传词表 → 生成 `VD_DATA.custom`（沿用现有 script 数据格式），导入后自动出现在词书下拉里。墨墨的招牌能力，本地化实现不难。
+3. **随身听（后台听）**：连续播单词+释义，锁屏也能放——不背单词的强项，用现有 SpeechSynthesis 拼一个即可。
+4. **FSRS 参数个性化（优化器）**：目前只有目标记忆率可调；积累复习记录后可接 ts-fsrs 的 optimizer 反推 w 参数（需要 review log，现在没存——要做得先在 `grade()` 里落 log）。
+5. **数据云同步**（可选）：目前仅 localStorage + 手动导出/导入 JSON。
+6. 词库扩展：源仓库还有托福/雅思/专四专八/GMAT（`convert.py` 的 `books` 列表加条目即可，下载用 jsDelivr）。注意 PWA 预缓存列表要同步加文件。
+7. 封面可以加「上次学到 List Ax / 连续 3 天」的回忆钩子，以及一周目标（周视图）。
 
 ## 9. 快速上手清单
 
@@ -149,7 +161,7 @@ python tools/make_icons.py
 # 语法检查 + 冒烟测试（无构建，这就是全部检查）
 node --check js/app.js && node --check sw.js
 python -m http.server 8642 --bind 127.0.0.1 &
-node tools/smoke.mjs                      # 17 项断言（含断网重载）
+node tools/smoke.mjs                      # 21 项断言（http）/ 17 项（file）
 node tools/smoke.mjs "file:///E:/.../vocab-drill/index.html"
 
 # 部署

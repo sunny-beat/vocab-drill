@@ -11,7 +11,7 @@ const BOOKS = {
 };
 const PAGES = ['study', 'books', 'dict', 'list'];
 const LS_KEY = 'vocabdrill.v2';
-const APP_VER = '3.0.1';
+const APP_VER = '3.2.0';
 
 /* ================= FSRS-6 记忆算法（ts-fsrs 本地全局包） ================= */
 /* 评分 1=Again 2=Hard 3=Good；进度字段：{ due, stability, difficulty, last, state, lv, wrong, lastWrong } */
@@ -256,19 +256,27 @@ function bookChapter(bid) {
   return b.chapter;
 }
 
-// opts: { chapter: 指定章节 } / { wrong: true 错词重刷 }
-async function buildQueue(opts) {
-  opts = opts || {};
+// 只准备当前词书（词表/章节/当前章），不建队列——封面页也要用
+async function prepareBook() {
   const book = await ensureBook(S.settings.book);
   WORDS = book.words;
   DEFMAP = new Map(WORDS.map(function (it) { return [it[0], it]; }));
   buildChapters();
-
-  let ch = bookChapter(S.settings.book);
-  if (opts.chapter != null) ch = Math.min(opts.chapter, CH_COUNT - 1);
-  CUR_CH = ch;
-  S.books[S.settings.book] = { chapter: ch };
+  CUR_CH = bookChapter(S.settings.book);
+  S.books[S.settings.book] = { chapter: CUR_CH };
   save();
+  return book;
+}
+
+// opts: { chapter: 指定章节 } / { wrong: true 错词重刷 }
+async function buildQueue(opts) {
+  opts = opts || {};
+  await prepareBook();
+  if (opts.chapter != null) {
+    CUR_CH = Math.min(opts.chapter, CH_COUNT - 1);
+    S.books[S.settings.book] = { chapter: CUR_CH };
+    save();
+  }
 
   const now = Date.now();
   sessionMode = opts.wrong ? 'wrong' : 'normal';
@@ -283,7 +291,7 @@ async function buildQueue(opts) {
       const p = S.progress[it[0]];
       if (p && p.due <= now) due.push(it[0]);
     }
-    const cwUnseen = chapterWords(ch).filter(function (w) { return !S.progress[w]; });
+    const cwUnseen = chapterWords(CUR_CH).filter(function (w) { return !S.progress[w]; });
     const quota = Math.max(0, S.settings.newPerDay - dayRec().n);
     QUEUE = shuffle(due).concat(cwUnseen.slice(0, quota));
   }
@@ -383,7 +391,7 @@ function grade(g) {
   save();
   QI++;
   saveSession();   // 快照指向下一张卡，恢复后无缝续刷
-  renderCard();
+  renderCard(g);
 }
 
 function undo() {
@@ -449,7 +457,10 @@ function updateTopbar() {
   $('today').textContent = '新词 ' + d.n + '/' + S.settings.newPerDay + ' · 复 ' + d.r;
   $('today').title = '今日目标：新词 ' + S.settings.newPerDay + ' 个';
   $('streak').textContent = '🔥 ' + streakDays();
-  $('mode').textContent = { recog: '识别模式', spell: '拼写模式', listen: '听音辨意' }[S.settings.mode] || '识别模式';
+  const segs = document.querySelectorAll('#modeseg button');
+  for (let i = 0; i < segs.length; i++) {
+    segs[i].classList.toggle('on', segs[i].dataset.mode === S.settings.mode);
+  }
 }
 
 function updateProgressbar() {
@@ -502,9 +513,116 @@ function starCycle(w) {
   toast(t === 0 ? '已取消收藏' : t === 1 ? '已收藏' : '已设为重点收藏');
 }
 
-/* ================= 学习页 ================= */
-function renderCard() {
+/* ================= 封面：今日任务 ================= */
+function dueCount() {
+  const now = Date.now();
+  let n = 0;
+  for (const it of WORDS) {
+    const p = S.progress[it[0]];
+    if (p && p.due <= now) n++;
+  }
+  return n;
+}
+function unseenCount() {
+  let n = 0;
+  for (const it of WORDS) if (!S.progress[it[0]]) n++;
+  return n;
+}
+/* 未来 7 天到期分布：下标 0 = 今天（含已过期） */
+function forecastBuckets() {
+  const b = [0, 0, 0, 0, 0, 0, 0];
+  const t0 = new Date();
+  t0.setHours(0, 0, 0, 0);
+  for (const it of WORDS) {
+    const p = S.progress[it[0]];
+    if (!p || p.due == null) continue;
+    const diff = Math.floor((p.due - t0.getTime()) / DAY);
+    if (diff <= 0) b[0]++;
+    else if (diff < 7) b[diff]++;
+  }
+  return b;
+}
+
+function renderHero() {
+  const hero = $('hero'), main = $('study-main');
+  if (!hero) return;
+  hero.classList.remove('hidden');
+  main.classList.add('hidden');
   updateTopbar();
+
+  const d = dayRec();
+  const goal = S.settings.newPerDay;
+  const doneToday = Math.min(d.n, goal);
+  const pct = goal ? Math.min(100, Math.round(doneToday / goal * 100)) : 100;
+  const due = dueCount();
+  const unseen = unseenCount();
+  const cw = chapterWords(CUR_CH) || [];
+  const chLearned = cw.filter(function (w) { return S.progress[w]; }).length;
+  const now = new Date();
+  const wk = '日一二三四五六'[now.getDay()];
+  const bk = forecastBuckets();
+  const maxB = Math.max.apply(null, bk.concat([1]));
+  const soon = bk.slice(1).reduce(function (a, b) { return a + b; }, 0);
+  const remaining = Math.max(0, goal - d.n);
+  const C = 327;   // 2πr, r=52
+
+  const headline = d.n >= goal
+    ? '今日目标已完成 🎉'
+    : (due > 0 ? '先复习 <em>' + due + '</em> 个到期词' : '今天还要背 <em>' + remaining + '</em> 个新词');
+  const ctaText = d.n >= goal ? '再背 10 个' : (due > 0 ? '开始复习' : '开始学习');
+
+  hero.innerHTML =
+    '<div class="hero-top">' +
+    '<div class="hero-date">' + (now.getMonth() + 1) + '月' + now.getDate() + '日 · 周' + wk + '</div>' +
+    '<h1>' + headline + '</h1>' +
+    '<p class="hero-sub">' + esc(BOOKS[S.settings.book].name) + ' · List ' + esc(CHAPTERS[CUR_CH].label) +
+    ' · 本章 ' + chLearned + '/' + cw.length + '</p>' +
+    '</div>' +
+    '<div class="ring-wrap">' +
+    '<svg class="ring" viewBox="0 0 120 120">' +
+    '<circle class="ring-bg" cx="60" cy="60" r="52"/>' +
+    '<circle class="ring-fg" cx="60" cy="60" r="52" style="stroke-dashoffset:' + Math.round(C - Math.max(C * pct / 100, 9)) + '"/>' +
+    '</svg>' +
+    '<div class="ring-txt"><b>' + doneToday + '<span class="muted" style="font-size:14px">/' + goal + '</span></b><span>今日新词</span></div>' +
+    '<div class="ring-note">目标完成 <b>' + pct + '%</b><br>未来 7 天 <b>' + soon + '</b> 词到期</div>' +
+    '</div>' +
+    '<div class="hero-stats">' +
+    '<div class="hstat due"><b>' + due + '</b><span>今日待复习</span></div>' +
+    '<div class="hstat new"><b>' + unseen + '</b><span>本书未背</span></div>' +
+    '<div class="hstat"><b>' + streakDays() + '</b><span>连续打卡</span></div>' +
+    '</div>' +
+    '<div class="forecast">' + bk.map(function (v, i) {
+      return '<div class="fc' + (i === 0 ? ' today' : '') + '" title="' + (i === 0 ? '今天' : i + ' 天后') + ' · ' + v + ' 词">' +
+        '<i style="height:' + Math.max(3, Math.round(v / maxB * 30)) + 'px"></i>' +
+        '<span>' + (i === 0 ? '今' : i + 'd') + '</span></div>';
+    }).join('') + '</div>' +
+    '<div class="hero-actions">' +
+    '<button id="hero-start" class="cta">' + ctaText + '</button>' +
+    '<button id="hero-ch" class="big">选章节</button>' +
+    '</div>' +
+    '<p class="hero-tip">空格 显示释义 · 1 / 2 / 3 评分 · M 切模式 · ? 看全部快捷键</p>';
+
+  const st = $('hero-start');
+  if (st) st.addEventListener('click', function () { startSession(); });
+  const hc = $('hero-ch');
+  if (hc) hc.addEventListener('click', function () { show('books'); });
+}
+
+function startSession() {
+  const btn = $('hero-start');
+  if (btn) { btn.disabled = true; btn.textContent = '准备中…'; }
+  buildQueue({}).then(function () { show('study'); }).catch(function (e) {
+    toast('加载失败：' + e.message);
+    if (btn) { btn.disabled = false; btn.textContent = '开始学习'; }
+  });
+}
+
+/* ================= 学习页 ================= */
+function renderCard(dir) {
+  updateTopbar();
+  const heroEl = $('hero'), mainEl = $('study-main');
+  if (heroEl) heroEl.classList.add('hidden');
+  if (mainEl) mainEl.classList.remove('hidden');
   // 队列刷完且还有未过关的词 → 自动进入下一轮巩固，直到全部「认识」
   if (QI >= QUEUE.length) {
     if (sessionMode === 'normal' && pendingWords().length > 0) {
@@ -529,9 +647,9 @@ function renderCard() {
   const defs = current[1];
   const phrases = current[2] || [];
   const p = S.progress[w];
-  card.classList.remove('pop');
+  card.classList.remove('pop', 'enter-up', 'enter-down');
   void card.offsetWidth;   // 重新触发动画
-  card.classList.add('pop');
+  card.classList.add(dir === 1 || dir === 2 ? 'enter-down' : 'enter-up');
 
   if (S.settings.mode === 'recog') {
     const freq = current[3] === 1;
@@ -766,21 +884,29 @@ function renderDone() {
     '<div class="done">' +
     '<div class="done-emoji">🎉</div>' +
     '<h2>' + (chDone ? 'List ' + CHAPTERS[CUR_CH].label + ' 学完' : '本轮完成') + '</h2>' +
-    '<p>本次会话：新词 ' + session.n + ' · 复习 ' + session.r + '</p>' +
+    '<div class="done-cards">' +
+    '<div class="dc"><b>' + session.n + '</b><span>本次新词</span></div>' +
+    '<div class="dc"><b>' + session.r + '</b><span>本次复习</span></div>' +
+    '<div class="dc"><b>' + d.n + '</b><span>今日累计新词</span></div>' +
+    '</div>' +
     '<p>' + mastery + '</p>' +
-    '<p>今天累计：新词 ' + d.n + ' · 复习 ' + d.r + '</p>' +
     '<div class="actions">' +
     '<button id="more" class="primary big">再学 10 个</button>' +
     (CUR_CH + 1 < CH_COUNT ? '<button id="nextch" class="big">下一章</button>' : '') +
-    '<button id="gochapters" class="big">选章节</button>' +
-    (wrongN ? '<button id="wrongdrill" class="big">错词重刷 (' + wrongN + ')</button>' : '') +
-    '<button id="openstats" class="big">统计</button>' +
+    '<button id="backhero" class="big">回封面</button>' +
+    '</div>' +
+    '<div class="actions sm">' +
+    '<button id="gochapters" class="big ghost">选章节</button>' +
+    (wrongN ? '<button id="wrongdrill" class="big ghost">错词重刷 (' + wrongN + ')</button>' : '') +
+    '<button id="openstats" class="big ghost">统计</button>' +
     '</div></div>';
 
   $('more').addEventListener('click', function () { addMoreNew(10); });
   const nx = $('nextch');
   if (nx) nx.addEventListener('click', function () { buildQueue({ chapter: CUR_CH + 1 }); });
   $('gochapters').addEventListener('click', function () { show('books'); });
+  const bh = $('backhero');
+  if (bh) bh.addEventListener('click', function () { renderHero(); });
   const wd = $('wrongdrill');
   if (wd) wd.addEventListener('click', function () { buildQueue({ wrong: true }); });
   $('openstats').addEventListener('click', openStats);
@@ -804,10 +930,29 @@ function addMoreNew(n) {
 }
 
 /* ================= 语音 ================= */
+/* 启动时预热语音列表：首次 speak 需要同步加载 voices，会拖音延迟 */
+function warmVoices() {
+  try {
+    if (!window.speechSynthesis) return;
+    speechSynthesis.getVoices();
+    speechSynthesis.addEventListener('voiceschanged', function () { speechSynthesis.getVoices(); });
+  } catch (e) { /* ignore */ }
+}
+function pickVoice(lang) {
+  try {
+    const vs = speechSynthesis.getVoices() || [];
+    const exact = vs.filter(function (v) { return (v.lang || '').replace('_', '-') === lang; });
+    if (exact.length) return exact[0];
+    const loose = vs.filter(function (v) { return (v.lang || '').toLowerCase().indexOf(lang.slice(0, 2)) === 0; });
+    return loose.length ? loose[0] : null;
+  } catch (e) { return null; }
+}
 function speak(w, lang) {
   try {
     const u = new SpeechSynthesisUtterance(w);
     u.lang = lang || 'en-US';
+    const v = pickVoice(u.lang);
+    if (v) u.voice = v;
     u.rate = 0.9;
     speechSynthesis.cancel();
     speechSynthesis.speak(u);
@@ -854,6 +999,16 @@ async function renderBooksPage() {
 
     if (isCur) {
       const curCh = bookChapter(bid);
+      // 字母跳转条：100 章的长列表里快速定位（按首字母分段）
+      const letters = [];
+      CHAPTERS.forEach(function (ch, i) {
+        if (!letters.length || letters[letters.length - 1].l !== ch.label[0]) {
+          letters.push({ l: ch.label[0], i: i });
+        }
+      });
+      html += '<div class="chnav">' + letters.map(function (x) {
+        return '<button class="chnav-b" data-chi="' + x.i + '">' + esc(x.l) + '</button>';
+      }).join('') + '</div>';
       html += '<div class="chgrid">';
       CHAPTERS.forEach(function (ch, i) {
         let l = 0;
@@ -877,6 +1032,12 @@ async function renderBooksPage() {
 
   root.querySelectorAll('.ch').forEach(function (b) {
     b.addEventListener('click', function () { openChapter(+b.dataset.i); });
+  });
+  root.querySelectorAll('.chnav-b').forEach(function (b) {
+    b.addEventListener('click', function () {
+      const t = root.querySelector('.ch[data-i="' + b.dataset.chi + '"]');
+      if (t) t.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    });
   });
   const bc = root.querySelector('.bcontinue');
   if (bc) bc.addEventListener('click', function () { buildQueue({}).then(function () { show('study'); }); });
@@ -1201,6 +1362,15 @@ function openStats() {
     return '<button class="chip stw" data-w="' + esc(w) + '">' + esc(w) + '</button>';
   }).join('');
 
+  const dRec = dayRec();
+  const bk = forecastBuckets();
+  const maxB = Math.max.apply(null, bk.concat([1]));
+  const fcHtml = '<div class="forecast lg">' + bk.map(function (v, i) {
+    return '<div class="fc' + (i === 0 ? ' today' : '') + '" title="' + (i === 0 ? '今天（含已过期）' : i + ' 天后') + ' · ' + v + ' 词">' +
+      '<i style="height:' + Math.max(3, Math.round(v / maxB * 44)) + 'px"></i>' +
+      '<span>' + (i === 0 ? '今' : '+' + i) + '</span></div>';
+  }).join('') + '</div>';
+
   $('modal-body').innerHTML =
     '<h2>📊 学习统计</h2>' +
     '<div class="stat-grid">' +
@@ -1208,6 +1378,13 @@ function openStats() {
     '<div class="stat-cell"><b>' + totalAll + '</b><span>累计学过（词）</span></div>' +
     '<div class="stat-cell"><b>' + sum + '</b><span>累计刷卡（次）</span></div>' +
     '</div>' +
+    '<h3>今日任务</h3>' +
+    '<div class="panel" style="margin-bottom:4px">' +
+    '<div class="form-row"><label>新词</label><b>' + dRec.n + ' / ' + S.settings.newPerDay + '</b></div>' +
+    '<div class="form-row"><label>复习</label><b>' + dRec.r + ' 次</b></div>' +
+    '<div class="form-row"><label>当前到期待复习</label><b>' + dueCount() + ' 词</b></div>' +
+    '</div>' +
+    '<h3>未来 7 天到期量</h3>' + fcHtml +
     '<h3>近 14 天趋势</h3>' + trendHtml() +
     '<h3>熟练度分布（本书）</h3>' + distHtml +
     '<h3>近 13 周活跃度</h3>' + heatmapHtml() +
@@ -1257,35 +1434,37 @@ function heatmapHtml() {
 /* ================= 设置弹窗 ================= */
 function openSettings() {
   const s = S.settings;
+  const sel = function (id, opts, cur, title) {
+    return '<select id="' + id + '" class="set-select"' + (title ? ' title="' + title + '"' : '') + '>' +
+      opts.map(function (o) {
+        return '<option value="' + o[0] + '"' + (String(cur) === String(o[0]) ? ' selected' : '') + '>' + o[1] + '</option>';
+      }).join('') + '</select>';
+  };
   $('modal-body').innerHTML =
     '<h2>⚙️ 设置</h2>' +
+    '<div class="panel-title">学习</div>' +
+    '<div class="panel">' +
     '<div class="form-row"><label>每日新词数</label>' +
-    '<select id="set-new">' + [10, 20, 30, 50].map(function (v) {
-      return '<option value="' + v + '"' + (s.newPerDay === v ? ' selected' : '') + '>' + v + '</option>';
-    }).join('') + '</select></div>' +
+    sel('set-new', [[10, '10 个'], [20, '20 个'], [30, '30 个'], [50, '50 个'], [100, '100 个（冲刺）']], s.newPerDay) + '</div>' +
     '<div class="form-row"><label>学习模式</label>' +
-    '<select id="set-mode"><option value="recog"' + (s.mode === 'recog' ? ' selected' : '') + '>识别（看词选义）</option>' +
-    '<option value="spell"' + (s.mode === 'spell' ? ' selected' : '') + '>拼写（看义写词）</option>' +
-    '<option value="listen"' + (s.mode === 'listen' ? ' selected' : '') + '>听音辨意（听音选义）</option></select></div>' +
+    sel('set-mode', [['recog', '识别（看词选义）'], ['spell', '拼写（看义写词）'], ['listen', '听音辨意（听音选义）']], s.mode) + '</div>' +
     '<div class="form-row"><label>目标记忆率</label>' +
-    '<select id="set-ret" title="越高复习越频繁、记得越牢">' +
-    [[0.8, '80%（宽松·省时）'], [0.85, '85%'], [0.9, '90%（推荐）'], [0.95, '95%（严格·最牢）']].map(function (o) {
-      return '<option value="' + o[0] + '"' + (Number(s.retention || 0.9) === o[0] ? ' selected' : '') + '>' + o[1] + '</option>';
-    }).join('') + '</select></div>' +
+    sel('set-ret', [[0.8, '80%（宽松·省时）'], [0.85, '85%'], [0.9, '90%（推荐）'], [0.95, '95%（严格·最牢）']],
+      Number(s.retention || 0.9), '越高复习越频繁、记得越牢') + '</div>' +
     '<div class="form-row"><label>自动发音</label>' +
-    '<input type="checkbox" id="set-speak"' + (s.autoSpeak ? ' checked' : '') + '></div>' +
+    '<span class="switch"><input type="checkbox" id="set-speak"' + (s.autoSpeak ? ' checked' : '') + '><span class="track"></span></span></div>' +
     '<div class="form-row"><label>主题</label>' +
-    '<select id="set-theme"><option value="auto"' + (s.theme === 'auto' ? ' selected' : '') + '>跟随系统</option>' +
-    '<option value="light"' + (s.theme === 'light' ? ' selected' : '') + '>浅色</option>' +
-    '<option value="dark"' + (s.theme === 'dark' ? ' selected' : '') + '>深色</option></select></div>' +
-    '<h3>应用</h3>' +
+    sel('set-theme', [['auto', '跟随系统'], ['light', '浅色（暖纸）'], ['dark', '深色（柔夜）']], s.theme) + '</div>' +
+    '</div>' +
+    '<div class="panel-title">应用</div>' +
     '<div class="actions" style="justify-content:flex-start">' +
     '<button id="set-install" class="big">安装到桌面</button>' +
     '<button id="set-update" class="big" title="清空离线缓存并重新加载">立即更新</button>' +
+    '<button id="set-keys" class="big">快捷键</button>' +
     '</div>' +
     '<p class="muted" style="margin-top:8px;font-size:12px">版本 v' + APP_VER +
     (location.protocol === 'file:' ? ' · 本地文件模式' : ' · 已支持离线使用') + '</p>' +
-    '<h3>数据</h3>' +
+    '<div class="panel-title">数据</div>' +
     '<div class="actions" style="justify-content:flex-start">' +
     '<button id="set-export" class="big">导出备份</button>' +
     '<button id="set-import" class="big">导入备份</button>' +
@@ -1295,25 +1474,30 @@ function openSettings() {
     '<input type="file" id="set-file" accept="application/json" class="hidden">' +
     '<p class="muted" style="margin-top:12px;font-size:12px">进度保存在浏览器本地（localStorage），换电脑或换浏览器前请先导出备份。答错计入错词本，答对一次错词计数减一，清零后自动移出错词本。</p>';
 
+  const onCard = function () { return !$('study-main').classList.contains('hidden'); };
+
   $('set-new').addEventListener('change', function (e) {
-    S.settings.newPerDay = +e.target.value; save(); buildQueue({});
+    S.settings.newPerDay = +e.target.value; save();
+    if (onCard()) buildQueue({}); else { updateTopbar(); renderHero(); }
   });
-  $('set-mode').addEventListener('change', function (e) {
-    S.settings.mode = e.target.value; save(); renderCard();
-  });
+  $('set-mode').addEventListener('change', function (e) { setMode(e.target.value); });
   $('set-ret').addEventListener('change', function (e) {
     S.settings.retention = +e.target.value;
     _FSRS = null;          // 参数变了，重建调度器
-    save(); renderCard();
+    save();
+    if (onCard()) renderCard(); else renderHero();
     toast('目标记忆率 ' + Math.round(S.settings.retention * 100) + '%：间隔已按新参数调整');
   });
-  $('set-speak').addEventListener('change', function (e) {    S.settings.autoSpeak = e.target.checked; save();
+  $('set-speak').addEventListener('change', function (e) {
+    S.settings.autoSpeak = e.target.checked;
+    save();
   });
   $('set-theme').addEventListener('change', function (e) {
     S.settings.theme = e.target.value; save(); applyTheme();
   });
   $('set-export').addEventListener('click', exportData);
   $('set-install').addEventListener('click', installApp);
+  $('set-keys').addEventListener('click', openKeys);
   $('set-update').addEventListener('click', function () {
     if (!confirm('将清空离线缓存并重新加载，学习进度不受影响。继续吗？')) return;
     updateCache();
@@ -1326,9 +1510,36 @@ function openSettings() {
   $('set-reset').addEventListener('click', function () {
     if (!confirm('确定清空《' + BOOKS[S.settings.book].name + '》这本书的学习进度吗？此操作不可撤销。')) return;
     for (const it of WORDS) delete S.progress[it[0]];
-    save(); buildQueue({}); closeModal();
+    save();
+    closeModal();
+    buildQueue({});
     toast('已清空本书进度');
   });
+  $('modal').classList.remove('hidden');
+}
+
+/* 快捷键速查 */
+function openKeys() {
+  const rows = [
+    ['空格', '显示释义 / 认识的直接下一张'],
+    ['1 / 2 / 3', '不认识 / 模糊 / 认识'],
+    ['1–4', '听音辨意：选第几个释义'],
+    ['Enter', '拼写模式提交；答完进入下一张'],
+    ['S', '朗读当前单词'],
+    ['F', '收藏（再按设为重点，三次取消）'],
+    ['M', '循环切换三种模式'],
+    ['Ctrl+Z', '撤销上一张（评分可回滚）'],
+    ['/', '跳到查词页'],
+    ['?', '打开这个快捷键表'],
+    ['Esc', '关闭弹窗 / 回到学习页'],
+    ['空格 / Enter', '封面页：开始学习']
+  ];
+  $('modal-body').innerHTML =
+    '<h2>⌨️ 快捷键</h2>' +
+    '<p class="muted" style="font-size:12px;margin-bottom:10px">全程可以不开鼠标：空格看释义，1/2/3 评分，一路刷下去。</p>' +
+    '<div class="kbd-grid">' + rows.map(function (r) {
+      return '<div><kbd>' + esc(r[0]) + '</kbd><span>' + esc(r[1]) + '</span></div>';
+    }).join('') + '</div>';
   $('modal').classList.remove('hidden');
 }
 
@@ -1429,9 +1640,12 @@ function wireUI() {
   sel.value = S.settings.book;
   sel.addEventListener('change', function (e) { switchBook(e.target.value); });
 
-  $('mode').addEventListener('click', toggleMode);
+  document.querySelectorAll('#modeseg button').forEach(function (b) {
+    b.addEventListener('click', function () { setMode(b.dataset.mode); });
+  });
   $('btn-stats').addEventListener('click', openStats);
   $('btn-settings').addEventListener('click', openSettings);
+  $('btn-keys').addEventListener('click', openKeys);
   $('modal-x').addEventListener('click', closeModal);
   $('modal').addEventListener('click', function (e) {
     if (e.target === $('modal')) closeModal();
@@ -1451,6 +1665,8 @@ function wireUI() {
     const tag = (e.target.tagName || '').toLowerCase();
     if (tag === 'input' || tag === 'select' || tag === 'textarea' || tag === 'button') return;
 
+    if (e.key === '?' || (e.key === '/' && e.shiftKey)) { e.preventDefault(); openKeys(); return; }
+
     if (S.page !== 'study') {
       if (e.key === '/') {
         e.preventDefault();
@@ -1458,6 +1674,15 @@ function wireUI() {
         $('dict-search').focus();
       } else if (e.key === 'Escape' && S.page !== 'study') {
         show('study');
+      }
+      return;
+    }
+
+    // 封面页：空格/回车 = 开始
+    if (!$('hero').classList.contains('hidden')) {
+      if (e.code === 'Space' || e.key === ' ' || e.key === 'Enter') {
+        e.preventDefault();
+        startSession();
       }
       return;
     }
@@ -1490,10 +1715,19 @@ function wireUI() {
 
 function toggleMode() {
   const order = ['recog', 'spell', 'listen'];
-  S.settings.mode = order[(order.indexOf(S.settings.mode) + 1) % 3];
+  setMode(order[(order.indexOf(S.settings.mode) + 1) % 3]);
+}
+function setMode(m) {
+  const changed = m !== S.settings.mode;
+  S.settings.mode = m;
   save();
-  renderCard();
-  toast({ recog: '识别模式：看单词想意思', spell: '拼写模式：看释义写单词', listen: '听音辨意：听读音选释义' }[S.settings.mode]);
+  updateTopbar();
+  // 只有卡片正在显示时才需要重绘，封面页/完成页不动
+  const onCard = !$('study-main').classList.contains('hidden') && QUEUE.length && QI < QUEUE.length;
+  if (onCard) renderCard();
+  if (changed) {
+    toast({ recog: '识别模式：看单词想意思', spell: '拼写模式：看释义写单词', listen: '听音辨意：听读音选释义' }[m]);
+  }
 }
 
 /* ================= 启动 ================= */
@@ -1501,14 +1735,27 @@ function toggleMode() {
   applyTheme();
   wireUI();
   registerSW();
+  warmVoices();
   try {
-    const saved = S.session;
-    await buildQueue();
-    restoreSession(saved);   // 恢复上次未完成的会话（轮次巩固中途退出也能接续）
-    show(S.page);
+    await prepareBook();
   } catch (err) {
+    $('hero').classList.add('hidden');
+    $('study-main').classList.remove('hidden');
     show('study');
     $('card').innerHTML = '<p class="bad">词库加载失败：' + esc(err.message) +
       '<br><span class="muted">请确认 data/ 目录完整，且不要单独移动 index.html。</span></p>';
+    return;
   }
+  const saved = S.session;
+  const canResume = saved && saved.book === S.settings.book && saved.date === todayStr() &&
+    saved.queue && saved.queue.length;
+  if (canResume) {
+    await buildQueue();      // buildQueue 会清空 S.session，故先取快照
+    restoreSession(saved);   // 恢复队列位置与轮次，内部调用 renderCard
+  } else {
+    S.session = null;
+    save();
+    renderHero();            // 落地页 = 今日任务封面
+  }
+  show(S.page);
 })();
