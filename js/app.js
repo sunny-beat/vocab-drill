@@ -11,7 +11,7 @@ const BOOKS = {
 };
 const PAGES = ['study', 'books', 'dict', 'list'];
 const LS_KEY = 'vocabdrill.v2';
-const APP_VER = '3.0.0';
+const APP_VER = '3.0.1';
 
 /* ================= FSRS-6 记忆算法（ts-fsrs 本地全局包） ================= */
 /* 评分 1=Again 2=Hard 3=Good；进度字段：{ due, stability, difficulty, last, state, lv, wrong, lastWrong } */

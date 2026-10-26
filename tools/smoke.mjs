@@ -99,7 +99,12 @@ function check(name, ok, detail) {
 
 // ---------- 1. 加载 ----------
 await send('Page.navigate', { url: URL_ARG });
-await wait(2500);
+// 线上（GitHub Pages）首次加载词库可能要几秒，轮询等卡片出现而不是死等固定时长
+let ready = false;
+for (let i = 0; i < 40 && !ready; i++) {
+  await wait(500);
+  ready = await js(`return !!(document.querySelector('.word') || document.querySelector('.bad'));`);
+}
 check('FSRS 已加载', await js('return !!window.FSRS && Object.keys(window.FSRS).length > 10;'));
 
 const first = await js(`
@@ -113,7 +118,11 @@ check('学习卡已渲染', !!first.card, first.card);
 check('间隔预览来自 FSRS（非兜底表）', first.grades.some(t => /认识/.test(t)), first.grades);
 
 // ---------- 2. 评分推进 ----------
-const progressed = await js(`
+const canGrade = await js(`return !!document.getElementById('reveal') && !!document.querySelector('[data-g="3"]');`);
+if (!canGrade) {
+  check('评分交互可用', false, '没有评分按钮（词库加载失败？）');
+} else {
+  const progressed = await js(`
   document.getElementById('reveal').click();
   var w = document.querySelector('.word').firstChild.textContent.trim();
   document.querySelector('[data-g="3"]').click();
@@ -123,8 +132,9 @@ const progressed = await js(`
   return { word: w, next: document.querySelector('.word') ? document.querySelector('.word').firstChild.textContent.trim() : '',
            hasStability: !!(p && p.stability > 0), n: (st.days ? Object.values(st.days)[0].n : 0) };
 `);
-check('评分写入 FSRS 字段(stability)', progressed.hasStability, progressed);
-check('进入下一张卡', progressed.next && progressed.next !== progressed.word, progressed.next);
+  check('评分写入 FSRS 字段(stability)', progressed.hasStability, progressed);
+  check('进入下一张卡', progressed.next && progressed.next !== progressed.word, progressed.next);
+}
 
 // ---------- 3. 记忆留存率 ----------
 const ret = await js(`
@@ -157,11 +167,12 @@ check('模式切回识别', modes.backToRecog);
 
 // ---------- 5. 四个页面 ----------
 for (const [pg, sel] of [['books', '.bcard'], ['dict', '#dict-search'], ['list', '#list-tabs']]) {
-  const ok = await js(`
-    document.querySelector('[data-page="${pg}"]').click();
-    await new Promise(r => setTimeout(r, 900));
-    return !!document.querySelector('${sel}');
-  `);
+  await js(`document.querySelector('[data-page="${pg}"]').click(); return 1;`);
+  let ok = false;
+  for (let i = 0; i < 30 && !ok; i++) {
+    await wait(400);
+    ok = await js(`return !!document.querySelector('${sel}');`);
+  }
   check('页面 ' + pg, ok);
 }
 
@@ -171,14 +182,36 @@ if (!isFile) {
     var l = document.querySelector('link[rel=manifest]');
     var mf = l ? (await (await fetch(l.href)).json()) : null;
     var reg = ('serviceWorker' in navigator) ? await navigator.serviceWorker.getRegistration() : null;
-    await new Promise(r => setTimeout(r, 1200));
+    await new Promise(r => setTimeout(r, 1500));
     var keys = await caches.keys();
+    var shell = keys.find(function (k) { return k.indexOf('vd-shell-') === 0; }) || '';
     var n = 0;
-    if (keys.length) { var c = await caches.open(keys[0]); n = (await c.keys()).length; }
-    return { icons: mf ? mf.icons.length : 0, display: mf && mf.display, sw: !!reg, cache: keys[0] || '', entries: n };
+    if (shell) { var c = await caches.open(shell); n = (await c.keys()).length; }
+    return { icons: mf ? mf.icons.length : 0, display: mf && mf.display, sw: !!reg, cache: shell, entries: n };
   `);
   check('manifest 可读', pwa.icons >= 4 && pwa.display === 'standalone', pwa);
-  check('Service Worker 已注册并预缓存', pwa.sw && pwa.entries >= 8, pwa.entries);
+  check('Service Worker 已注册并预缓存外壳', pwa.sw && pwa.entries >= 8, pwa.entries);
+
+  const offlineReady = await js(`
+    var keys = await caches.keys();
+    var dk = keys.find(function (k) { return k.indexOf('vd-data-') === 0; });
+    if (!dk) return { files: [] };
+    var c = await caches.open(dk);
+    var ks = (await c.keys()).map(function (r) { return new URL(r.url).pathname.split('/').pop(); });
+    return { files: ks };
+  `);
+  check('词库已进入离线缓存', offlineReady.files.length >= 1, offlineReady.files);
+
+  // 断网后重载，应仍能出卡片（SW 兜底）
+  await send('Network.emulateNetworkConditions', { offline: true, latency: 0, downloadThroughput: -1, uploadThroughput: -1 });
+  await send('Page.reload', {});
+  let offOk = false;
+  for (let i = 0; i < 20 && !offOk; i++) {
+    await wait(400);
+    offOk = await js(`return !!document.querySelector('.word');`);
+  }
+  const offDetail = offOk ? await js(`return document.querySelector('.word').firstChild.textContent.trim();`) : '断网后无卡片';
+  check('断网重载仍可用', offOk, offDetail);
 }
 
 // ---------- 7. 运行时无报错 ----------

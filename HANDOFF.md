@@ -12,7 +12,7 @@
 - **纯静态**：HTML + CSS + 原生 JS（有分号、函数声明为主、强调「`file://` 直开必须可用」）。**不要引入构建工具**——双击打开是核心使用方式。
 - 词书数据以 `<script>` 标签加载 `data/*.js`（全局 `window.VD_DATA`），而非 fetch——绕开 `file://` 的 CORS 限制。
 - **FSRS-6 算法**：`js/vendor/fsrs.esm.js`（ts-fsrs 5.4.2 原包，勿改）→ 由 `tools/build_fsrs_global.py` 转成 `js/vendor/fsrs.global.js`（经典脚本，挂 `window.FSRS`）。**必须用经典脚本**：ES module 在 `file://` 下会被 CORS 拦，而用户的常用方式是双击 index.html。改算法版本时先换 esm 再跑脚本。
-- PWA：`manifest.webmanifest` + `sw.js`（仅 http/https 注册，`file://` 自动跳过）。
+- PWA：`manifest.webmanifest` + `sw.js`（仅 http/https 注册，`file://` 自动跳过）。**双缓存**：`vd-shell-<VER>` 装外壳（~60KB，安装时预缓存，逐项重试）、`vd-data-<VER>` 存词库（首次加载时按需缓存，避免每次更新代码重下 3.4MB）。
 - 进度存储：`localStorage` key = `vocabdrill.v2`。线上（github.io）、本地 127.0.0.1、`file://` 三者的存储互相隔离。
 
 ## 3. 目录结构
@@ -90,8 +90,8 @@ vocab-drill/
 **本地测试**：`python -m http.server 8642 --bind 127.0.0.1`（后台跑） + `node tools/smoke.mjs`。
 
 `tools/smoke.mjs` 是自带的冒烟测试：用 Node 22 内置 WebSocket 直连 Edge 的 CDP（**不需要装 Playwright**），
-用独立临时 profile + 禁用 HTTP 缓存，断言 FSRS 加载、评分落库、记忆留存率、三模式、四页面、manifest/SW 预缓存、
-运行期无异常。两个协议都要跑：
+用独立临时 profile + 禁用 HTTP 缓存，断言 FSRS 加载、评分落库、记忆留存率、三模式、四页面、manifest/SW 外壳预缓存、
+词库进离线缓存、断网重载仍可用、运行期无异常。两个协议都要跑：
 
 ```bash
 node tools/smoke.mjs "http://127.0.0.1:8642/index.html"
@@ -116,8 +116,9 @@ node tools/smoke.mjs "file:///E:/.../vocab-drill/index.html"     # file:// 自�
 4. **CET 词表不含超基础词**：源词表本身如此，不是转换丢数据。同义词 chip 点击未收录词会置灰（.dim）+ toast 提示，属预期行为。
 5. **`认识`不再重现**：v1 曾把所有评分都重新入队，现只有 1/2 分进轮次巩固。
 6. **完成页会清 `S.session`**，`renderDone()` 里轮次状态归零的顺序影响副标题显示，改动前先读该函数。
-7. **SW 缓存版本**：`sw.js` 的 `VER` 是缓存名的一部分，activate 时只清 `vd-shell-` 前缀的旧缓存。改资源不提 VER = 用户拿到新旧混合的文件。
-8. 用户实际在用：**`file://` 打开的多个标签页**。改动后提醒用户 F5；绝不主动清用户的 localStorage。
+7. **SW 缓存版本**：`sw.js` 的 `VER` 是缓存名的一部分（shell 与 data 各一份），activate 时清掉旧 `vd-shell-*` / `vd-data-*`；改前端资源必须同时提 `sw.js` 的 `VER` 与 `app.js` 的 `APP_VER`，否则用户会拿到新旧混合文件。救急入口：设置 → 立即更新（清缓存重载，不动进度）。
+8. **Pages 上预缓存大文件会偶发失败**（连接被掐）。所以词库不放在 install 预缓存里，走首次访问的 SWR；改 `sw.js` 时别把 `data/*.js` 塞回 `CORE` 数组。
+9. 用户实际在用：**`file://` 打开的多个标签页**。改动后提醒用户 F5；绝不主动清用户的 localStorage。
 
 ## 8. 待办/建议方向（按优先级）
 
@@ -148,7 +149,7 @@ python tools/make_icons.py
 # 语法检查 + 冒烟测试（无构建，这就是全部检查）
 node --check js/app.js && node --check sw.js
 python -m http.server 8642 --bind 127.0.0.1 &
-node tools/smoke.mjs                      # 15 项断言
+node tools/smoke.mjs                      # 17 项断言（含断网重载）
 node tools/smoke.mjs "file:///E:/.../vocab-drill/index.html"
 
 # 部署
