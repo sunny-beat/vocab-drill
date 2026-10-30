@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#f5f1e8" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#15171a" media="(prefers-color-scheme: dark)">
-<meta name="description" content="纯本地背单词：FSRS 记忆调度、章节速刷、错词本、听音辨意，离线可用。">
+<meta name="description" content="纯本地背单词：四选一识别 + 拼写、一义一例、FSRS 记忆调度、错词本，离线可用。">
 <title>单词速刷 · Vocab Drill</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icons/apple-touch-180.png">
@@ -26,9 +26,8 @@
   </div>
   <div class="tb-group tb-right">
     <div id="modeseg" class="modeseg" role="group" aria-label="学习模式">
-      <button data-mode="recog" title="识别：看词选义（快捷键 M 循环）">识别</button>
-      <button data-mode="spell" title="拼写：看义写词">拼写</button>
-      <button data-mode="listen" title="听音：听音选义">听音</button>
+      <button data-mode="recog" title="识别：看单词，从四个释义里选一个（快捷键 M 切换）">识别</button>
+      <button data-mode="spell" title="拼写：看释义，把单词拼出来">拼写</button>
     </div>
     <span id="today" class="pill" title="今日目标"></span>
     <span id="streak" class="pill fire" title="连续打卡天数">🔥 0</span>
@@ -84,10 +83,9 @@
 </main>
 
 <footer class="hints" id="hints">
-  <span><kbd>空格</kbd> 显示释义 / 认识</span>
-  <span><kbd>1</kbd> 不认识</span>
-  <span><kbd>2</kbd> 模糊</span>
-  <span><kbd>3</kbd> 认识</span>
+  <span><kbd>1–4</kbd> 选释义</span>
+  <span><kbd>空格</kbd> 下一张</span>
+  <span><kbd>回车</kbd> 拼写提交</span>
   <span><kbd>M</kbd> 切换模式</span>
   <span><kbd>F</kbd> 收藏</span>
   <span><kbd>Ctrl+Z</kbd> 撤销</span>

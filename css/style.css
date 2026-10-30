@@ -385,33 +385,110 @@ input.spell {
   outline: none;
 }
 input.spell:focus { border-color: var(--accent); }
+input.spell.gone { display: none; }
 input.spell.right { border-color: var(--ok); }
 input.spell.wrong { border-color: var(--bad); }
-.spellfb { font-size: 1.05rem; line-height: 1.7; min-height: 1em; }
+.spellfb {
+  font-size: 1.05rem;
+  line-height: 1.7;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  max-width: 640px;
+}
+.spellfb:empty { display: none; }
+.spellfb .meaning { max-width: 100%; }
 .spellfb .ok { color: var(--ok); font-weight: 600; }
 .spellfb .bad { color: var(--bad); font-weight: 600; }
 .spellfb .meaning { text-align: left; }
 
-/* 听音辨意 */
-.lopts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; max-width: 640px; }
-.lopt {
-  display: flex; align-items: center; gap: 10px;
-  text-align: left; font: inherit; font-size: 14px;
-  padding: 13px 14px; border-radius: 12px;
-  border: 1px solid var(--border); background: var(--bg); color: var(--fg);
+/* 识别：四选一 */
+.qprompt {
+  font-size: 12px;
+  letter-spacing: 1.4px;
+  color: var(--muted);
+  margin-top: -2px;
+}
+.qopts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  width: 100%;
+  max-width: 640px;
+}
+.qopt {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-align: left;
+  font: inherit;
+  font-size: 14px;
+  line-height: 1.45;
+  padding: 13px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--fg);
   cursor: pointer;
+  transition: transform .08s, border-color .15s, background .15s, color .15s, opacity .2s;
 }
-.lopt:hover { border-color: var(--accent); }
-.lopt:disabled { cursor: default; }
-.lopt .lnum {
-  flex-shrink: 0; width: 22px; height: 22px; border-radius: 6px;
-  background: var(--accent-weak); color: var(--accent);
-  font-size: 12px; display: flex; align-items: center; justify-content: center;
+.qopt:hover:not(:disabled) { border-color: var(--accent); }
+.qopt:active:not(:disabled) { transform: scale(.975); }
+.qopt:disabled { cursor: default; }
+.qopt .qkey {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  background: var(--accent-weak);
+  color: var(--accent);
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
-.lopt.lopt-ok { border-color: var(--ok); background: var(--ok-weak); color: var(--ok); }
-.lopt.lopt-bad { border-color: var(--bad); background: var(--bad-weak); color: var(--bad); }
+.qopt .qtext { flex: 1; min-width: 0; }
+.qopt-ok { border-color: var(--ok); background: var(--ok-weak); color: var(--ok); font-weight: 600; }
+.qopt-ok .qkey { background: var(--ok); color: #fff; }
+.qopt-bad { border-color: var(--bad); background: var(--bad-weak); color: var(--bad); }
+.qopt-bad .qkey { background: var(--bad); color: #fff; }
+.qopt-dim { opacity: .42; }
+.qfb { width: 100%; max-width: 640px; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.qfb:empty { display: none; }
+.qfb .meaning { max-width: 100%; }
+.qres {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 15px;
+}
+.qres.ok { color: var(--ok); }
+.qres.bad { color: var(--bad); }
+.qres.skip { color: var(--muted); }
+.qres .qnote {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--warn);
+  background: var(--warn-weak);
+  border-radius: 999px;
+  padding: 2px 9px;
+}
+.qres .qwhen { font-size: 12px; font-weight: 400; color: var(--muted); }
+.qmean { animation: fadein .2s ease-out; }
+/* 一义一例：每条释义一块，例句缩进挂在下面 */
+.dblock { text-align: left; }
+.dblock + .dblock { margin-top: 2px; }
+.dblock .sent { margin-top: 5px; }
+.tinyhint { font-size: 12px; color: var(--muted); text-align: center; margin: 0; }
+.linkhint.undo { margin-left: 6px; }
+.tagline .linkhint { text-decoration: none; color: var(--accent); padding: 0 2px; }
 .sent.cloze .en { color: var(--accent); font-weight: 600; }
-@media (max-width: 560px) { .lopts { grid-template-columns: 1fr; } }
+@media (max-width: 560px) { .qopts { grid-template-columns: 1fr; } }
 
 .done-emoji { font-size: 3rem; }
 .done h2 { font-size: 1.4rem; }

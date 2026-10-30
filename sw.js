@@ -10,7 +10,7 @@
  *   - 其余静态资源：stale-while-revalidate，写 SHELL 缓存
  * 升级资源后务必同时改这里的 VER 和 app.js 的 APP_VER。
  */
-const VER = '3.2.0';
+const VER = '3.3.0';
 const SHELL = 'vd-shell-' + VER;
 const DATA = 'vd-data-' + VER;
 

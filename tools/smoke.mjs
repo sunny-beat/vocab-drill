@@ -138,31 +138,67 @@ check('点击开始进入卡片', cardReady);
 
 const first = await js(`
   var w = document.querySelector('.word');
+  var opts = Array.from(document.querySelectorAll('#qopts .qopt'));
   return {
     card: w ? w.firstChild.textContent.trim() : '',
-    grades: Array.from(document.querySelectorAll('.grade')).map(b => b.textContent.trim())
+    n: opts.length,
+    okN: (typeof quizOpts !== 'undefined') ? quizOpts.filter(function (o) { return o.ok; }).length : -1,
+    texts: opts.map(function (b) { var t = b.querySelector('.qtext'); return t ? t.innerText.trim() : ''; })
   };
 `);
 check('学习卡已渲染', !!first.card, first.card);
-check('间隔预览来自 FSRS（非兜底表）', first.grades.some(t => /认识/.test(t)), first.grades);
+check('识别＝四选一（4 个选项，恰好 1 个正确）', first.n === 4 && first.okN === 1, { n: first.n, ok: first.okN });
+check('四个选项文本互不重复', new Set(first.texts).size === 4, first.texts);
 
-// ---------- 2. 评分推进 ----------
-const canGrade = await js(`return !!document.getElementById('reveal') && !!document.querySelector('[data-g="3"]');`);
-if (!canGrade) {
-  check('评分交互可用', false, '没有评分按钮（词库加载失败？）');
+// ---------- 2. 答题与评分 ----------
+if (!first.card || first.n !== 4) {
+  check('答题交互可用', false, '卡片未就绪（词库加载失败？）');
 } else {
-  const progressed = await js(`
-  document.getElementById('reveal').click();
-  var w = document.querySelector('.word').firstChild.textContent.trim();
-  document.querySelector('[data-g="3"]').click();
-  await new Promise(r => setTimeout(r, 300));
-  var st = JSON.parse(localStorage.getItem('vocabdrill.v2') || '{}');
-  var p = st.progress && st.progress[w];
-  return { word: w, next: document.querySelector('.word') ? document.querySelector('.word').firstChild.textContent.trim() : '',
-           hasStability: !!(p && p.stability > 0), n: (st.days ? Object.values(st.days)[0].n : 0) };
-`);
-  check('评分写入 FSRS 字段(stability)', progressed.hasStability, progressed);
-  check('进入下一张卡', progressed.next && progressed.next !== progressed.word, progressed.next);
+  // 答错：亮出正确项 + 释义 + 例句，且不自动跳走
+  const wrong = await js(`
+    var wi = quizOpts.findIndex(function (o) { return !o.ok; });
+    document.querySelectorAll('#qopts .qopt')[wi].click();
+    await new Promise(r => setTimeout(r, 300));
+    var fb = document.getElementById('qfb');
+    return {
+      bad: !!document.querySelector('.qopt-bad'),
+      okShown: !!document.querySelector('.qopt-ok'),
+      res: !!fb.querySelector('.qres.bad'),
+      mean: !!fb.querySelector('.meaning .dline'),
+      sent: !!fb.querySelector('.meaning .sent'),
+      next: !!document.getElementById('qnext'),
+      here: document.querySelector('.word').firstChild.textContent.trim()
+    };
+  `);
+  check('答错高亮错误项与正确项', wrong.bad && wrong.okShown, wrong);
+  check('答错显示释义 + 例句', wrong.res && wrong.mean && wrong.sent, wrong);
+  check('答错后停留等你看完', wrong.here === first.card && wrong.next, wrong.here);
+
+  const afterWrong = await js(`
+    var w = document.querySelector('.word').firstChild.textContent.trim();
+    document.getElementById('qnext').click();
+    await new Promise(r => setTimeout(r, 400));
+    var st = JSON.parse(localStorage.getItem('vocabdrill.v2') || '{}');
+    var p = st.progress && st.progress[w];
+    var nw = document.querySelector('.word') ? document.querySelector('.word').firstChild.textContent.trim() : '';
+    return { word: w, wrong: p ? p.wrong : null, advanced: !!nw && nw !== w };
+  `);
+  check('答错记为「不认识」并进错词本', afterWrong.wrong >= 1, afterWrong);
+  check('「下一个」推进到下一张', afterWrong.advanced, afterWrong);
+
+  // 答对：写入 FSRS 字段，并在 900ms 后自动翻页
+  const right = await js(`
+    var wi = quizOpts.findIndex(function (o) { return o.ok; });
+    var w = document.querySelector('.word').firstChild.textContent.trim();
+    document.querySelectorAll('#qopts .qopt')[wi].click();
+    await new Promise(r => setTimeout(r, 1500));
+    var st = JSON.parse(localStorage.getItem('vocabdrill.v2') || '{}');
+    var p = st.progress && st.progress[w];
+    var nw = document.querySelector('.word') ? document.querySelector('.word').firstChild.textContent.trim() : '';
+    return { word: w, stab: p ? p.stability : 0, moved: !!nw && nw !== w };
+  `);
+  check('答对写入 FSRS 字段(stability)', right.stab > 0, right.stab);
+  check('答对后自动翻到下一张', right.moved);
 }
 
 // ---------- 3. 记忆留存率 ----------
@@ -171,32 +207,54 @@ const ret = await js(`
 `);
 check('记忆留存率按 FSRS-6 曲线（t=S 应≈90%）', Math.abs(ret - 90) <= 2, ret);
 
-// ---------- 4. 三模式（顶栏分段控件直达） ----------
+// ---------- 4. 两种模式（顶栏分段控件直达；听音已下线） ----------
 const modes = await js(`
   var out = {};
-  var seg = function (m) { document.querySelector('#modeseg button[data-mode="' + m + '"]').click(); };
+  out.segN = document.querySelectorAll('#modeseg button').length;
+  var seg = function (m) {
+    var b = document.querySelector('#modeseg button[data-mode="' + m + '"]');
+    if (b) b.click();
+  };
   seg('spell');
   await new Promise(r => setTimeout(r, 350));
   out.spell = !!document.getElementById('spell');
+  out.hasKnow = !!document.getElementById('submit');
+  out.hasSkip = !!document.getElementById('skip');
   out.spellOn = document.querySelector('#modeseg button[data-mode="spell"]').classList.contains('on');
   document.getElementById('skip').click();
   await new Promise(r => setTimeout(r, 250));
   out.spellFb = (document.getElementById('spellfb').innerText || '').length > 0;
-  var nx = document.getElementById('next') || document.getElementById('lnext');
+  var nx = document.getElementById('next');
   if (nx) nx.click();
-  await new Promise(r => setTimeout(r, 300));
-  seg('listen');
-  await new Promise(r => setTimeout(r, 500));
-  out.listen = document.querySelectorAll('#lopts .lopt').length;
+  await new Promise(r => setTimeout(r, 400));
   seg('recog');
-  await new Promise(r => setTimeout(r, 350));
-  out.backToRecog = !!document.querySelector('.grade');
+  await new Promise(r => setTimeout(r, 400));
+  out.backToRecog = document.querySelectorAll('#qopts .qopt').length === 4;
   return out;
 `);
-check('拼写模式可用', modes.spell && modes.spellFb, modes.spellFb);
+check('听音模式已下线（分段控件 2 项）', modes.segN === 2, modes.segN);
+check('拼写模式有「认识 / 不认识」两个选项', modes.spell && modes.hasKnow && modes.hasSkip, modes);
+check('拼写「不认识」直接看答案', modes.spellFb, modes.spellFb);
 check('分段控件高亮当前模式', modes.spellOn);
-check('听音辨意 4 选项', modes.listen === 4, modes.listen);
-check('模式切回识别', modes.backToRecog);
+check('切回识别仍是四选一', modes.backToRecog);
+
+// ---------- 4b. 数据：一义一例 ----------
+const dataOk = await js(`
+  var bk = null, ks = Object.keys(window.VD_DATA || {});
+  for (var i = 0; i < ks.length; i++) if (!bk) bk = window.VD_DATA[ks[i]];
+  if (!bk) return { n: 0, bad: 0, defs: 0, sents: 0 };
+  var bad = 0, defs = 0, sents = 0;
+  for (var j = 0; j < bk.words.length; j++) {
+    var w = bk.words[j];
+    if (!Array.isArray(w[6]) || w[6].length !== w[1].length) { bad++; continue; }
+    defs += w[1].length;
+    for (var k = 0; k < w[6].length; k++) if (w[6][k]) sents++;
+  }
+  return { n: bk.words.length, bad: bad, defs: defs, sents: sents };
+`);
+check('例句数组与释义一一对齐', dataOk.n > 0 && dataOk.bad === 0, dataOk);
+check('释义例句覆盖率 ≥ 95%', dataOk.sents / Math.max(1, dataOk.defs) >= 0.95,
+  Math.round(dataOk.sents * 1000 / Math.max(1, dataOk.defs)) / 10 + '%');
 
 // ---------- 5. 四个页面 ----------
 for (const [pg, sel] of [['books', '.bcard'], ['dict', '#dict-search'], ['list', '#list-tabs']]) {

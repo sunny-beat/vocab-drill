@@ -1,7 +1,7 @@
 {
   "name": "单词速刷 · Vocab Drill",
   "short_name": "单词速刷",
-  "description": "纯本地键盘流背单词：FSRS 记忆调度、章节速刷、错词本、听音辨意，离线可用。",
+  "description": "纯本地键盘流背单词：四选一识别、拼写、一义一例、FSRS 记忆调度、错词本，离线可用。",
   "lang": "zh-CN",
   "start_url": "./",
   "scope": "./",

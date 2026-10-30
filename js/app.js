@@ -11,7 +11,7 @@ const BOOKS = {
 };
 const PAGES = ['study', 'books', 'dict', 'list'];
 const LS_KEY = 'vocabdrill.v2';
-const APP_VER = '3.2.0';
+const APP_VER = '3.3.0';
 
 /* ================= FSRS-6 记忆算法（ts-fsrs 本地全局包） ================= */
 /* 评分 1=Again 2=Hard 3=Good；进度字段：{ due, stability, difficulty, last, state, lv, wrong, lastWrong } */
@@ -109,6 +109,8 @@ function loadState() {
   const d = defaultState();
   if (s && typeof s === 'object') {
     s.settings = Object.assign(d.settings, s.settings || {});
+    // 听音辨意模式已下线，老进度统一回落到「识别（四选一）」
+    if (s.settings.mode !== 'recog' && s.settings.mode !== 'spell') s.settings.mode = 'recog';
     if (!BOOKS[s.settings.book]) s.settings.book = 'cet6';   // 旧数据里的四级书已并入六级
     s.progress = s.progress || {};
     for (const k in s.progress) {
@@ -203,10 +205,10 @@ let firstPassCount = 0;   // 首轮刷卡词数（成绩单用）
 let session = { n: 0, r: 0 };
 let sessionMode = 'normal';   // normal | wrong
 let lastUndo = null;
-let revealed = false;
 let spellChecked = false;
+let spellStart = 0;
 let pendingSpell = null;
-let listenOpts = [], listenAnswered = false;
+let quizOpts = [], quizAnswered = false, quizStart = 0, cardSeq = 0;
 let current = null;
 
 function shuffle(a) {
@@ -424,14 +426,27 @@ function toast(msg) {
 }
 function statusClass(p) { return !p ? 's0' : (p.lv >= 3 ? 's2' : 's1'); }
 
-/* 词条内容渲染助手：释义分条（词性高亮）、短语、例句（英文+中文） */
-function defsHtml(defs) {
-  return defs.map(function (d) {
+/* 词条内容渲染助手：释义分条（词性高亮），每条释义下方挂它自己的例句 */
+function defsHtml(defs, sents) {
+  return defs.map(function (d, i) {
     const m = d.match(/^([a-z]+\.)\s*(.*)$/i);
-    return m
+    const line = m
       ? '<div class="dline"><b class="pos">' + esc(m[1]) + '</b>' + esc(m[2]) + '</div>'
       : '<div class="dline">' + esc(d) + '</div>';
+    const s = sents && sents[i];
+    return '<div class="dblock">' + line + (s && s[0] ? sentHtml(s) : '') + '</div>';
   }).join('');
+}
+/* 一义一例：entry[6] 与 entry[1] 一一对应，没有合适例句的位置是 null */
+function sentOf(entry, i) {
+  const ss = entry[6] || [];
+  const s = ss[i];
+  return (s && s[0]) ? s : null;
+}
+function firstSent(entry) {
+  const ss = entry[6] || [];
+  for (let i = 0; i < ss.length; i++) if (ss[i] && ss[i][0]) return ss[i];
+  return null;
 }
 function phrInlineHtml(ph) {
   if (!ph) return '';
@@ -478,7 +493,7 @@ function updateStudySub(showPos) {
   if (round > 1) {
     $('study-sub-text').textContent = '第 ' + round + ' 轮巩固 · 共 ' + QUEUE.length + ' 词' +
       (showPos === false ? '' : ' · 刷到第 ' + (QI + 1) + ' 词') +
-      ' · 全部点「认识」即完成';
+      ' · 全部答对即完成';
     return;
   }
   const cw = chapterWords(CUR_CH);
@@ -492,6 +507,10 @@ function updateStudySub(showPos) {
 function tagOf(p) {
   if (!p) return '新词';
   return p.lv >= 3 ? '复习' : '巩固';
+}
+/* 撤销入口：评分给错了还能退回来（Ctrl+Z 同效） */
+function undoChip() {
+  return lastUndo ? ' <button id="undobtn" class="linkhint undo" title="撤销上一张 (Ctrl+Z)">↩ 撤销</button>' : '';
 }
 
 function starLabel(w) {
@@ -602,7 +621,7 @@ function renderHero() {
     '<button id="hero-start" class="cta">' + ctaText + '</button>' +
     '<button id="hero-ch" class="big">选章节</button>' +
     '</div>' +
-    '<p class="hero-tip">空格 显示释义 · 1 / 2 / 3 评分 · M 切模式 · ? 看全部快捷键</p>';
+    '<p class="hero-tip">1–4 选释义 · 答对自动翻页 · M 切模式 · ? 看全部快捷键</p>';
 
   const st = $('hero-start');
   if (st) st.addEventListener('click', function () { startSession(); });
@@ -634,7 +653,7 @@ function renderCard(dir) {
       QUEUE = shuffle(pendingWords());
       QI = 0;
       saveSession();
-      toast('第 ' + round + ' 轮巩固：' + QUEUE.length + ' 词再过一遍，全部点「认识」即完成');
+      toast('第 ' + round + ' 轮巩固：' + QUEUE.length + ' 词再过一遍，全部答对即完成');
     } else {
       renderDone();
       return;
@@ -643,7 +662,8 @@ function renderCard(dir) {
   updateStudySub();
   updateProgressbar();
   const card = $('card');
-  revealed = false; spellChecked = false; pendingSpell = null;
+  cardSeq++;
+  spellChecked = false; pendingSpell = null;
   const w = QUEUE[QI];
   current = DEFMAP.get(w) || [w, [], []];
   const defs = current[1];
@@ -655,59 +675,50 @@ function renderCard(dir) {
 
   if (S.settings.mode === 'recog') {
     const freq = current[3] === 1;
-    const us = current[4] || '', sents = current[6] || [];
-    const syns = current[7] || [];
     const ret = retrievability(p);
+    quizOpts = buildQuizOptions(current);
+    quizAnswered = false;
+    quizStart = Date.now();
     card.innerHTML =
-      '<div class="tagline">' + (round > 1 ? '第' + round + '轮巩固 · ' : '') + tagOf(p) + (freq ? ' · <span class="freqmark">高频</span>' : '') + (ret != null ? ' · 记忆 ' + ret + '%' : '') + '</div>' +
+      '<div class="tagline">' + (round > 1 ? '第' + round + '轮巩固 · ' : '') + tagOf(p) +
+      (freq ? ' · <span class="freqmark">高频</span>' : '') + (ret != null ? ' · 记忆 ' + ret + '%' : '') +
+      undoChip() + '</div>' +
       '<div class="word">' + esc(w) +
       ' <button id="speak" class="icon" title="发音 (S)">🔊</button>' +
       ' <button id="starbtn" class="icon' + ((S.stars[w] || 0) ? ' starred' : '') + '" title="收藏：点一下收藏，再点设为重点，再点取消">' + starLabel(w) + '</button></div>' +
-      (us || current[5] ? phonHtml({ us: current[4], uk: current[5] }) : '') +
-      '<div id="meaning" class="meaning hidden">' +
-      defsHtml(defs) +
-      (phrases.length ? phrInlineHtml(phrases[0]) : '') +
-      synInlineHtml(syns) +
-      (sents.length ? sentHtml(sents[0]) : '') +
-      '</div>' +
-      '<div class="actions" id="revealrow">' +
-      '<button id="reveal" class="primary big">显示释义 <kbd>空格</kbd></button>' +
-      '</div>' +
-      '<div class="actions">' +
-      '<button class="grade g1 big" data-g="1">不认识 <kbd>1</kbd></button>' +
-      '<button class="grade g2 big" data-g="2">模糊 ≈' + nextIntervalPreview(p, 2) + ' <kbd>2</kbd></button>' +
-      '<button class="grade g3 big" data-g="3">认识 +' + nextIntervalPreview(p, 3) + ' <kbd>3</kbd></button>' +
-      (lastUndo ? '<button id="undobtn" class="big ghost" title="撤销上一步 (Ctrl+Z)">↩ 撤销</button>' : '') +
-      '</div>';  } else if (S.settings.mode === 'listen') {
-    listenOpts = buildListenOptions(current);
-    listenAnswered = false;
-    card.innerHTML =
-      '<div class="tagline">' + (round > 1 ? '第' + round + '轮巩固 · ' : '') + '听音辨意 · 听读音选释义</div>' +
-      '<button id="replay" class="primary big">🔊 播放读音 <kbd>空格</kbd></button>' +
-      '<div id="lopts" class="lopts">' +
-      listenOpts.map(function (o, i) {
-        return '<button class="big lopt" data-i="' + i + '"><span class="lnum">' + (i + 1) + '</span>' + esc(o.text) + '</button>';
+      (current[4] || current[5] ? phonHtml({ us: current[4], uk: current[5] }) : '') +
+      '<div class="qprompt">选出正确的释义</div>' +
+      '<div id="qopts" class="qopts">' +
+      quizOpts.map(function (o, i) {
+        return '<button class="qopt" data-i="' + i + '"><span class="qkey">' + (i + 1) + '</span>' +
+          '<span class="qtext">' + esc(o.text) + '</span></button>';
       }).join('') +
       '</div>' +
-      '<div id="lfb" class="spellfb"></div>' +
-      '<div class="actions"><button id="lnext" class="primary big hidden">下一个 <kbd>回车</kbd></button></div>';
+      '<div id="qfb" class="qfb"></div>';
   } else {
-    const cloze = clozeHint(w, current[6]);
+    const cloze = clozeHint(w, current);
+    spellStart = Date.now();
     card.innerHTML =
-      '<div class="tagline">拼写 · ' + tagOf(p) + '</div>' +
-      '<div class="meaning prompt">' + esc(defs.join('\n')) + '</div>' +
+      '<div class="tagline">拼写 · ' + tagOf(p) + undoChip() + '</div>' +
+      '<div class="meaning prompt">' + defs.map(function (d) { return esc(d); }).join('<br>') + '</div>' +
       (cloze
         ? '<div class="sent cloze"><span class="en">' + esc(cloze) + '</span></div>'
         : '<div class="hint">' + hintPattern(w) + '</div>') +
       '<input id="spell" class="spell" autocomplete="off" autocapitalize="off" ' +
-      'spellcheck="false" placeholder="输入单词后回车">' +
+      'spellcheck="false" placeholder="拼出这个单词，回车判定">' +
       '<div id="spellfb" class="spellfb"></div>' +
-      '<div class="actions"><button id="skip" class="big">跳过（不认识）</button></div>';
+      '<div class="actions" id="spellrow">' +
+      '<button id="skip" class="big" title="直接看答案，记为不认识">不认识 <kbd>Esc</kbd></button>' +
+      '<button id="submit" class="primary big" title="我认识，把它拼出来">认识 <kbd>回车</kbd></button>' +
+      '</div>' +
+      '<p class="muted tinyhint">「认识」= 把单词拼出来提交；拼错或想不起来就点「不认识」看答案。</p>';
     const inp = $('spell');
     inp.focus();
     inp.addEventListener('keydown', function (e) {
       if (e.key === 'Enter') { e.preventDefault(); checkSpell(); }
+      else if (e.key === 'Escape') { e.preventDefault(); showSpellAnswer(false, true); }
     });
+    $('submit').addEventListener('click', checkSpell);
   }
 
   const sp = $('speak');
@@ -716,76 +727,122 @@ function renderCard(dir) {
   if (sb) sb.addEventListener('click', function () { starCycle(w); });
   const sk = $('skip');
   if (sk) sk.addEventListener('click', function () { showSpellAnswer(false, true); });
-  const rp = $('replay');
-  if (rp) rp.addEventListener('click', function () { speak(w); });
-  const nl = $('lnext');
-  if (nl) nl.addEventListener('click', function () { grade(pendingSpell); });
-  card.querySelectorAll('.lopt').forEach(function (b) {
-    b.addEventListener('click', function () { answerListen(+b.dataset.i); });
+  card.querySelectorAll('.qopt').forEach(function (b) {
+    b.addEventListener('click', function () { answerQuiz(+b.dataset.i); });
   });
-  const rv = $('reveal');
-  if (rv) rv.addEventListener('click', reveal);
   const ub = $('undobtn');
   if (ub) ub.addEventListener('click', undo);
   card.querySelectorAll('.grade').forEach(function (b) {
     b.addEventListener('click', function () { grade(+b.dataset.g); });
   });
 
-  if (S.settings.mode === 'listen') speak(w);
-  else if (S.settings.mode === 'recog' && S.settings.autoSpeak) speak(w);
+  if (S.settings.mode === 'recog' && S.settings.autoSpeak) speak(w);
 }
 
-function reveal() {
-  if (revealed || S.settings.mode !== 'recog') return;
-  revealed = true;
-  $('meaning').classList.remove('hidden');
-  const rr = $('revealrow');
-  if (rr) rr.classList.add('hidden');
+/* ================= 识别：四选一 ================= */
+/* 选项文本：释义太多时只取第一条，避免长到看不清 */
+function optText(entry) {
+  const defs = (entry && entry[1]) || [];
+  const all = defs.join('；');
+  return all.length <= 30 ? all : (defs[0] || '');
 }
-
-/* 听音辨意：正确释义 + 3 个随机干扰项 */
-function buildListenOptions(entry) {
-  const correctText = entry[1].join('；').slice(0, 40);
-  const opts = [{ ok: true, text: correctText }];
+function defPos(defs) {
+  const m = ((defs && defs[0]) || '').match(/^([a-z]{1,4})\./i);
+  return m ? m[1].toLowerCase() : '';
+}
+function charSet(s) {
+  const set = Object.create(null);
+  for (let i = 0; i < s.length; i++) set[s[i]] = 1;
+  return set;
+}
+function setOverlap(a, b) {
+  let n = 0, total = 0;
+  for (const k in a) { total++; if (b[k]) n++; }
+  return total ? n / total : 0;
+}
+/* 干扰项挑选：同词性优先、长度接近、字面重合低的（近义词一律排除，否则两个都对） */
+function buildQuizOptions(entry) {
+  const correctText = optText(entry);
+  const cp = defPos(entry[1]);
+  const cset = charSet(correctText);
+  const syns = entry[7] || [];
+  const cand = [];
   let guard = 0;
-  while (opts.length < 4 && guard++ < 300) {
+  while (cand.length < 26 && guard++ < 600) {
     const it = WORDS[(Math.random() * WORDS.length) | 0];
-    if (!it || it[0] === entry[0] || !it[1][0]) continue;
-    const t = it[1].join('；').slice(0, 40);
-    if (t === correctText || opts.some(function (o) { return o.text === t; })) continue;
-    opts.push({ ok: false, text: t });
+    if (!it || it[0] === entry[0] || !it[1] || !it[1][0]) continue;
+    if (syns.indexOf(it[0]) >= 0) continue;                      // 同义词
+    if ((it[7] || []).indexOf(entry[0]) >= 0) continue;          // 反向同义词
+    const t = optText(it);
+    if (!t || t.length < 2 || t.length > 42) continue;
+    if (t === correctText) continue;
+    if (cand.some(function (o) { return o.text === t; })) continue;
+    cand.push({ text: t, pos: defPos(it[1]), over: setOverlap(cset, charSet(t)) });
   }
+  cand.sort(function (a, b) {
+    const pa = a.pos === cp ? 0 : 1, pb = b.pos === cp ? 0 : 1;
+    if (pa !== pb) return pa - pb;
+    const la = Math.abs(a.text.length - correctText.length);
+    const lb = Math.abs(b.text.length - correctText.length);
+    return (a.over * 4 + la * 0.03) - (b.over * 4 + lb * 0.03);
+  });
+  const opts = [{ ok: true, text: correctText }];
+  for (let i = 0; i < cand.length && opts.length < 4; i++) opts.push({ ok: false, text: cand[i].text });
   return shuffle(opts);
 }
-function answerListen(i) {
-  if (listenAnswered || !listenOpts[i]) return;
-  listenAnswered = true;
-  const ok = listenOpts[i].ok;
-  pendingSpell = ok ? 3 : 1;
-  document.querySelectorAll('#lopts .lopt').forEach(function (b, j) {
+
+function answerQuiz(i) {
+  if (quizAnswered || !quizOpts[i] || !current) return;
+  quizAnswered = true;
+  const ok = quizOpts[i].ok;
+  const dt = Date.now() - quizStart;
+  // 答对但磨了 6 秒以上 → 记为「模糊」；比让用户在按钮上猜 2天/3天 更贴近实战
+  const g = ok ? (dt > 6000 ? 2 : 3) : 1;
+  pendingSpell = g;
+  const seq = cardSeq;
+  const w = current[0];
+  const p = S.progress[w];
+
+  document.querySelectorAll('#qopts .qopt').forEach(function (b, j) {
     b.disabled = true;
-    if (listenOpts[j] && listenOpts[j].ok) b.classList.add('lopt-ok');
-    else if (j === i) b.classList.add('lopt-bad');
+    if (quizOpts[j] && quizOpts[j].ok) b.classList.add('qopt-ok');
+    else if (j === i) b.classList.add('qopt-bad');
+    else b.classList.add('qopt-dim');
   });
-  const fb = $('lfb');
+
+  const fb = $('qfb');
+  if (!fb) return;
   fb.innerHTML =
-    (ok ? '<span class="ok">✓ 正确</span>' : '<span class="bad">✗ 正确答案：</span>') +
-    ' <span class="word small">' + esc(current[0]) + ' <button id="speak2" class="icon">🔊</button></span>' +
-    (current[4] || current[5] ? phonHtml({ us: current[4], uk: current[5] }) : '') +
-    '<div class="meaning">' + defsHtml(current[1]) +
-    (current[6] && current[6].length ? sentHtml(current[6][0]) : '') + '</div>';
-  fb.querySelector('#speak2').addEventListener('click', function () { speak(current[0]); });
-  const nl = $('lnext');
-  if (nl) nl.classList.remove('hidden');
-  speak(current[0]);
+    '<div class="qres ' + (ok ? 'ok' : 'bad') + '">' + (ok ? '✓ 正确' : '✗ 答错了') +
+    (g === 2 ? '<span class="qnote">想得有点久，记为「模糊」</span>' : '') +
+    '<span class="qwhen">下次复习：' + nextIntervalPreview(p, g) + '</span></div>' +
+    '<div class="meaning qmean">' + defsHtml(current[1], current[6]) +
+    (current[2] && current[2].length ? phrInlineHtml(current[2][0]) : '') +
+    synInlineHtml(current[7] || []) +
+    '</div>' +
+    '<div class="actions"><button id="qnext" class="primary big">下一个 <kbd>空格</kbd></button></div>';
+  $('qnext').addEventListener('click', function () { if (seq === cardSeq) grade(g); });
+
+  if (!ok) speak(w);
+  if (ok) {
+    // 答对不打断节奏：900ms 后自动翻到下一张，中途按空格可立刻前进
+    setTimeout(function () {
+      if (seq === cardSeq && quizAnswered && S.page === 'study') grade(g);
+    }, 900);
+  }
 }
 
-/* 例句挖空：例句含目标词时，用挖空句替代首字母提示（语境线索，不带中文防泄底） */
-function clozeHint(w, sents) {
-  if (sents && sents.length) {
-    const re = new RegExp('\\b' + w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'i');
-    if (re.test(sents[0][0])) return sents[0][0].replace(re, '＿＿＿');
-  }
+/* 例句挖空：取第一条例句，把目标词（含变形）挖掉当语境线索，不带中文防泄底 */
+function clozeHint(w, entry) {
+  const s = firstSent(entry);
+  if (!s) return null;
+  const base = w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const stem = w.slice(0, Math.max(4, Math.min(w.length - 1, 5)))
+    .replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const exact = new RegExp('\\b' + base + '\\b', 'i');
+  const loose = new RegExp('\\b' + stem + '[a-z]{0,4}\\b', 'i');
+  if (exact.test(s[0])) return s[0].replace(exact, '_____');
+  if (loose.test(s[0])) return s[0].replace(loose, '_____');
   return null;
 }
 
@@ -805,34 +862,51 @@ function norm(s) {
 function checkSpell() {
   if (spellChecked) { grade(pendingSpell); return; }
   const inp = $('spell');
-  const ok = norm(inp.value) === norm(current[0]);
-  showSpellAnswer(ok, false);
+  if (!inp || !inp.value.trim()) {
+    if (inp) inp.focus();
+    toast('先把单词拼出来；不会就点「不认识」');
+    return;
+  }
+  showSpellAnswer(norm(inp.value) === norm(current[0]), false);
 }
 
 function showSpellAnswer(ok, skipped) {
   if (spellChecked) return;
   spellChecked = true;
-  pendingSpell = (ok && !skipped) ? 3 : 1;
   const w = current[0], defs = current[1];
-  const sents = current[6] || [];
+  // 拼对了但磨蹭太久（>12 秒）→ 记「模糊」，和识别模式的判定口径一致
+  pendingSpell = (ok && !skipped) ? (Date.now() - spellStart > 12000 ? 2 : 3) : 1;
   const inp = $('spell');
   inp.disabled = true;
   inp.classList.add(ok && !skipped ? 'right' : 'wrong');
+  // 答案已经写在下面了，输入框和挖空句就别占地方了
+  inp.classList.add('gone');
+  const card = $('card');
+  const cz = card.querySelector('.sent.cloze');
+  if (cz) cz.remove();
+  const th = card.querySelector('.tinyhint');
+  if (th) th.remove();
+  const pr = card.querySelector('.meaning.prompt');
+  if (pr) pr.remove();          // 答案块里已经有释义了，别重复
   const fb = $('spellfb');
   fb.innerHTML =
-    (ok && !skipped ? '<span class="ok">✓ 正确</span>' : '<span class="bad">✗ 正确答案：</span>') +
-    ' <span class="word small">' + esc(w) + ' <button id="speak2" class="icon">🔊</button></span>' +
+    '<div class="word small">' + esc(w) + ' <button id="speak2" class="icon">🔊</button></div>' +
     (current[4] || current[5] ? phonHtml({ us: current[4], uk: current[5] }) : '') +
-    '<div class="meaning">' + defsHtml(defs) +
-    (sents.length ? sentHtml(sents[0]) : '') + '</div>';
+    '<div class="qres ' + (ok && !skipped ? 'ok' : (skipped ? 'skip' : 'bad')) + '">' +
+    (ok && !skipped ? '✓ 拼对了' : (skipped ? '已跳过' : '✗ 拼写不对')) +
+    '<span class="qwhen">下次复习：' + nextIntervalPreview(S.progress[w], pendingSpell) + '</span></div>' +
+    '<div class="meaning">' + defsHtml(defs, current[6]) + '</div>';
   fb.querySelector('#speak2').addEventListener('click', function () { speak(w); });
-  $('skip').parentElement.innerHTML =
-    '<button id="next" class="primary big">下一个 <kbd>回车</kbd></button>';
-  $('next').addEventListener('click', function () { grade(pendingSpell); });
+  const row = $('spellrow');
+  if (row) {
+    row.innerHTML = '<button id="next" class="primary big">下一个 <kbd>空格</kbd></button>';
+    $('next').addEventListener('click', function () { grade(pendingSpell); });
+  }
   speak(w);
 }
 
 function renderDone() {
+  cardSeq++;   // 作废还在等待中的自动翻页
   current = null;
   S.session = null; save();   // 本批结束，清除会话快照
   const card = $('card');
@@ -1282,7 +1356,7 @@ function richCardHtml(e, px) {
     '<button id="' + px + '-star1" class="big' + (st === 1 ? ' primary' : '') + '">⭐ 收藏</button>' +
     '<button id="' + px + '-star2" class="big' + (st === 2 ? ' primary' : '') + '">⭐⭐ 重点收藏</button>' +
     '</div>' +
-    '<div class="meaning">' + defsHtml(e.defs) + '</div>' +
+    '<div class="meaning">' + defsHtml(e.defs, e.sents) + '</div>' +
     (e.syns && e.syns.length
       ? '<h3 class="rsub">近义词（点击查看）</h3><div class="chips syns">' +
         e.syns.map(function (s) { return '<button class="chip synchip" data-w="' + esc(s) + '">' + esc(s) + '</button>'; }).join('') +
@@ -1292,9 +1366,6 @@ function richCardHtml(e, px) {
       ? '<h3 class="rsub">常用短语</h3><ul class="phr">' +
         e.phrases.map(function (ph) { return '<li><b>' + esc(ph[0]) + '</b>' + esc(ph[1]) + '</li>'; }).join('') +
         '</ul>'
-      : '') +
-    (e.sents.length
-      ? '<h3 class="rsub">例句</h3><div class="sents">' + e.sents.map(sentHtml).join('') + '</div>'
       : '') +
     '</div>';
 }
@@ -1449,7 +1520,7 @@ function openSettings() {
     '<div class="form-row"><label>每日新词数</label>' +
     sel('set-new', [[10, '10 个'], [20, '20 个'], [30, '30 个'], [50, '50 个'], [100, '100 个（冲刺）']], s.newPerDay) + '</div>' +
     '<div class="form-row"><label>学习模式</label>' +
-    sel('set-mode', [['recog', '识别（看词选义）'], ['spell', '拼写（看义写词）'], ['listen', '听音辨意（听音选义）']], s.mode) + '</div>' +
+    sel('set-mode', [['recog', '识别：四选一选释义'], ['spell', '拼写：看释义写单词']], s.mode) + '</div>' +
     '<div class="form-row"><label>目标记忆率</label>' +
     sel('set-ret', [[0.8, '80%（宽松·省时）'], [0.85, '85%'], [0.9, '90%（推荐）'], [0.95, '95%（严格·最牢）']],
       Number(s.retention || 0.9), '越高复习越频繁、记得越牢') + '</div>' +
@@ -1523,25 +1594,27 @@ function openSettings() {
 /* 快捷键速查 */
 function openKeys() {
   const rows = [
-    ['空格', '显示释义 / 认识的直接下一张'],
-    ['1 / 2 / 3', '不认识 / 模糊 / 认识'],
-    ['1–4', '听音辨意：选第几个释义'],
-    ['Enter', '拼写模式提交；答完进入下一张'],
+    ['1 – 4', '识别：选第 1~4 个释义'],
+    ['空格', '答完后翻到下一张（答对会自动翻）'],
+    ['回车', '拼写：提交答案'],
+    ['Esc', '拼写：不认识，直接看答案'],
     ['S', '朗读当前单词'],
     ['F', '收藏（再按设为重点，三次取消）'],
-    ['M', '循环切换三种模式'],
+    ['M', '在识别 / 拼写之间切换'],
     ['Ctrl+Z', '撤销上一张（评分可回滚）'],
     ['/', '跳到查词页'],
     ['?', '打开这个快捷键表'],
     ['Esc', '关闭弹窗 / 回到学习页'],
-    ['空格 / Enter', '封面页：开始学习']
+    ['空格 / 回车', '封面页：开始学习']
   ];
   $('modal-body').innerHTML =
     '<h2>⌨️ 快捷键</h2>' +
-    '<p class="muted" style="font-size:12px;margin-bottom:10px">全程可以不开鼠标：空格看释义，1/2/3 评分，一路刷下去。</p>' +
+    '<p class="muted" style="font-size:12px;margin-bottom:10px">全程可以不开鼠标：1–4 答题，答完空格翻页，一路刷下去。</p>' +
     '<div class="kbd-grid">' + rows.map(function (r) {
       return '<div><kbd>' + esc(r[0]) + '</kbd><span>' + esc(r[1]) + '</span></div>';
-    }).join('') + '</div>';
+    }).join('') + '</div>' +
+    '<p class="muted" style="font-size:12px;margin-top:12px">评分只有三档，但不用你手动挑：答对＝认识，答对但磨蹭超过 6 秒＝模糊，答错＝不认识。' +
+    '「下次复习」的间隔由 FSRS 按你的历史表现算，只作提示，不参与答题。</p>';
   $('modal').classList.remove('hidden');
 }
 
@@ -1690,36 +1763,39 @@ function wireUI() {
     }
 
     if (S.settings.mode === 'recog') {
-      if (e.code === 'Space' || e.key === ' ') { e.preventDefault(); revealed ? grade(3) : reveal(); }
-      else if (e.key === '1') grade(1);
-      else if (e.key === '2') grade(2);
-      else if (e.key === '3') grade(3);
-      else if (e.key.toLowerCase() === 's' && current) speak(current[0]);
-      else if (e.key.toLowerCase() === 'f' && current) starCycle(current[0]);
-      else if (e.key.toLowerCase() === 'm') toggleMode();
-    } else if (S.settings.mode === 'listen') {
-      if (!listenAnswered) {
-        if (e.key >= '1' && e.key <= '4') { e.preventDefault(); answerListen(+e.key - 1); }
-        else if (e.code === 'Space' || e.key === ' ') { e.preventDefault(); if (current) speak(current[0]); }
+      if (!quizAnswered) {
+        if (e.key >= '1' && e.key <= '4') { e.preventDefault(); answerQuiz(+e.key - 1); }
+        else if (e.key.toLowerCase() === 's' && current) speak(current[0]);
+        else if (e.key.toLowerCase() === 'f' && current) starCycle(current[0]);
         else if (e.key.toLowerCase() === 'm') toggleMode();
-      } else if (e.key === 'Enter' || e.code === 'Space' || e.key === ' ') {
-        e.preventDefault(); grade(pendingSpell);
+      } else {
+        if (e.key === 'Enter' || e.code === 'Space' || e.key === ' ') {
+          e.preventDefault();
+          if (quizAnswered) grade(pendingSpell);
+        } else if (e.key.toLowerCase() === 's' && current) speak(current[0]);
+        else if (e.key.toLowerCase() === 'f' && current) starCycle(current[0]);
+        else if (e.key.toLowerCase() === 'm') toggleMode();
+      }
+    } else {
+      if (spellChecked) {
+        if (e.key === 'Enter' || e.code === 'Space' || e.key === ' ') {
+          e.preventDefault(); grade(pendingSpell);
+        } else if (e.key.toLowerCase() === 'm') toggleMode();
+      } else if (e.key === 'Enter') {
+        e.preventDefault(); checkSpell();
       } else if (e.key.toLowerCase() === 'm') {
         toggleMode();
       }
-    } else {
-      if (e.key === 'Enter') { e.preventDefault(); spellChecked ? grade(pendingSpell) : checkSpell(); }
-      else if ((e.code === 'Space' || e.key === ' ') && spellChecked) { e.preventDefault(); grade(pendingSpell); }
-      else if (e.key.toLowerCase() === 'm') toggleMode();
     }
   });
 }
 
 function toggleMode() {
-  const order = ['recog', 'spell', 'listen'];
-  setMode(order[(order.indexOf(S.settings.mode) + 1) % 3]);
+  const order = ['recog', 'spell'];
+  setMode(order[(order.indexOf(S.settings.mode) + 1) % order.length]);
 }
 function setMode(m) {
+  if (m !== 'recog' && m !== 'spell') m = 'recog';
   const changed = m !== S.settings.mode;
   S.settings.mode = m;
   save();
@@ -1728,7 +1804,7 @@ function setMode(m) {
   const onCard = !$('study-main').classList.contains('hidden') && QUEUE.length && QI < QUEUE.length;
   if (onCard) renderCard();
   if (changed) {
-    toast({ recog: '识别模式：看单词想意思', spell: '拼写模式：看释义写单词', listen: '听音辨意：听读音选释义' }[m]);
+    toast({ recog: '识别：看单词，从四个释义里选一个', spell: '拼写：看释义，把单词拼出来' }[m]);
   }
 }
 
