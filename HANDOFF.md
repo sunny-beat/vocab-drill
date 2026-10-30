@@ -1,11 +1,11 @@
 # 词汇训练 (Vocab Drill) 交接文档
 
 > 交接对象：后续接手维护/迭代的 AI Agent 或开发者
-> 最后更新：2026-10-30（v3.3.0：例句库一义一例 + 识别改四选一 + 拼写加认识/不认识 + 下线听音）
+> 最后更新：2026-10-30（v3.4.0：撤销改双向「上一个/下一个」+ 识别卡可自评认识/不认识 + 拼写加听音）
 
 ## 1. 项目一句话
 
-纯本地、零构建、零后端的键盘流背单词单页应用：落地是「今日任务」封面（目标环 + 待复习 + 7 天预测），一键进入卡片速刷。识别模式是**四选一选择题**（答对自动翻页），拼写模式给「认识/不认识」两个选项，每个释义都配自己的例句。在线地址：**https://sunny-beat.github.io/vocab-drill/**（GitHub Pages 自动部署，可安装为 PWA）；本地双击 `index.html` 同样可用。
+纯本地、零构建、零后端的键盘流背单词单页应用：落地是「今日任务」封面（目标环 + 待复习 + 7 天预测），一键进入卡片速刷。识别模式是**四选一选择题**（另有一眼认识/完全不认识的自评兜底，答对自动翻页），拼写模式给「认识/不认识」两个选项 + **听音**（当听写用），每个释义都配自己的例句，评分可**双向回溯**（上一个/下一个）。在线地址：**https://sunny-beat.github.io/vocab-drill/**（GitHub Pages 自动部署，可安装为 PWA）；本地双击 `index.html` 同样可用。
 
 ## 2. 技术栈与架构约束
 
@@ -23,8 +23,8 @@ vocab-drill/
 ├── manifest.webmanifest    # PWA 清单（start_url/scope 均为相对路径 "./"）
 ├── sw.js                   # Service Worker：导航 network-first、静态 SWR
 ├── icons/                  # icon.svg（源）+ icon-192/512 + apple-touch-180
-├── css/style.css           # ~980 行。CSS 变量双主题：浅色=暖纸 / 深色=柔夜，主色绿
-├── js/app.js               # 全部逻辑（~1800 行）
+├── css/style.css           # ~1030 行。CSS 变量双主题：浅色=暖纸 / 深色=柔夜，主色绿
+├── js/app.js               # 全部逻辑（~1930 行）
 ├── js/vendor/fsrs.esm.js   # ts-fsrs 5.4.2 ESM 原包（勿手改）
 ├── js/vendor/fsrs.global.js# 生成物（勿手改），window.FSRS 全局
 ├── data/cet6.js            # 词书数据（生成物，勿手改）
@@ -34,7 +34,7 @@ vocab-drill/
 ├── tools/check_sent.py     # 例句覆盖率/质量自检（抽样人工过目）
 ├── tools/build_fsrs_global.py  # ESM → 经典脚本
 ├── tools/make_icons.py     # SVG → PNG（用系统 Edge 无头截图，免装 Pillow）
-├── tools/smoke.mjs         # 冒烟测试（零依赖 CDP：http 31 项 / file 26 项）
+├── tools/smoke.mjs         # 冒烟测试（零依赖 CDP：http 39 项 / file 34 项）
 ├── tools/shots.mjs         # 关键页面截图（视觉回归）
 ├── data_raw/               # 原始词库 jsonl（.gitignore，仓库不含）
 ├── README.md               # 用户向说明
@@ -82,16 +82,20 @@ vocab-drill/
 | **开始学习** | `startSession()` | 封面的按钮/空格键走这里：`buildQueue({})` → `renderCard()`。有当日会话时 init 直接续背，不经过封面 |
 | 启动流程 | `init()` | `prepareBook()` 只准备词书（不建队列）→ 有 `S.session` 且是同书同天 → `buildQueue()+restoreSession(快照)`；否则 `renderHero()`。**快照必须在 buildQueue 之前取**（buildQueue 会清 `S.session`） |
 | 模式切换 | `setMode(m)` / `toggleMode()` | 顶栏 `#modeseg` 两个按钮直达，`M` 键在两模式间切换。**封面/完成页时不能 renderCard**（`onCard` 判断） |
-| 卡片动效 | `renderCard(dir)` | `dir` 传评分值：1/2 → `enter-down`（从上滑入），3 → `enter-up`（从下滑入） |
-| 快捷键表单 | `openKeys()` | `?` 或页脚「全部 ?」或设置里「快捷键」，12 条 |
+| 卡片动效 | `renderCard(dir)` | `dir` 传评分值：1/2 → `enter-down`（从上滑入），3 → `enter-up`（从下滑入）。`undoStep()` 传 2（往回退，卡片从上落下）、`redoStep()` 传 3（往前走，从下升上） |
+| 快捷键表单 | `openKeys()` | `?` 或页脚「全部 ?」或设置里「快捷键」，14 条 |
 | 章节字母导航 | `renderBooksPage()` 内 `.chnav` | 按首字母生成跳转按钮，`scrollIntoView` 定位 |
 | FSRS 调度 | `F()` `buildFsrsCard()` `grade()` | 封装 `window.FSRS`（fsrs.global.js），`enable_short_term:false`（天级调度，当日重复交给轮次巩固）。评分 1/2/3 → Rating Again/Hard/Good。**未加载时全链路自动降级到 INTERVALS 表** |
 | 目标记忆率 | `S.settings.retention` + `F()` | 80/85/90/95%，改设置时置 `_FSRS=null` 重建调度器 |
 | 间隔预览 | `nextIntervalPreview(p, g)` | **只在答完后作为信息显示**（`下次复习：3天`）。v3.3 起不再挂在评分按钮上——用户反馈看不懂 `≈2天 / +3天` |
 | **识别四选一** | `buildQuizOptions()` `answerQuiz()` | 正确释义 + 3 个干扰项。干扰项**同词性优先、长度接近、字面重合低**，并排除双向近义词 |
-| **自动评分** | `answerQuiz()` / `showSpellAnswer()` | 答对=3；答对但超时（识别 6s / 拼写 12s）=2；答错=1。用户不再手动挑三档 |
-| **答对自动翻页** | `answerQuiz()` 内 `cardSeq` 守卫 | 0.9s 后 `grade()`；期间按空格立即前进。`cardSeq` 在每次 `renderCard()`/`renderDone()` 自增，旧计时器据此作废——**新增"延时跳转"必须沿用这个守卫** |
-| **拼写认识/不认识** | `renderCard()` 的 spell 分支 + `showSpellAnswer()` | 「认识」=提交拼写（回车）、「不认识」=看答案（`Esc`）；答案态会隐藏输入框、挖空句和重复的释义提示 |
+| **识别卡自评** | `selfAssess(ok)` → `settleQuiz()` | 选项下方「认识 `回车` / 不认识 `Esc`」，绕过选择题直接判（3 / 1 分）。**自评「认识」不自动翻页**（要让人看一眼释义确认），用选项答对才 0.9s 自动翻 |
+| **答题结算** | `settleQuiz(ok, g, idx, self)` | `answerQuiz()` 与 `selfAssess()` 共用：高亮选项、移除 `#selfrow`、渲染反馈块、绑定 `#qnext`、按 `self` 决定要不要自动翻页。**新增作答方式一律走这里**，别再复制一份反馈渲染 |
+| **自动评分** | `answerQuiz()` / `selfAssess()` / `showSpellAnswer()` | 答对或自评认识=3；答对但超时（识别 6s / 拼写 12s）=2；答错或不认识=1。用户不再手动挑三档 |
+| **答对自动翻页** | `answerQuiz()` 内 `cardSeq` 守卫 | 0.9s 后 `grade()`；期间按空格立即前进。`cardSeq` 在每次 `renderCard()`/`renderDone()`/`undoStep()`/`redoStep()` 自增，旧计时器据此作废——**新增"延时跳转"必须沿用这个守卫** |
+| **上一个 / 下一个** | `HIST[]` + `HPOS` / `undoStep()` `redoStep()` / `navChip()` | 每张已评分的卡在 `grade()` 开头存快照 `{w,qi,g,isNew,prev,daysBefore,prevSG}`，评完补 `np`/`daysAfter`。「上一个」整块还原（progress/days/sessionGrades/session 计数）并把卡重摆出来可重答；「下一个」把 `np`+`daysAfter` 原样写回、`QI=qi+1`、不用重答。`HIST.length = HPOS` 在每次 `grade()` 开头截断重做分支 |
+| **拼写认识/不认识** | `renderCard()` 的 spell 分支 + `showSpellAnswer()` | 「认识」=提交拼写（回车）、「不认识」=看答案（`Esc`）；答案态会隐藏输入框、挖空句、`.listenrow` 和重复的释义提示 |
+| **拼写听音** | `#playw` + `speak()` | 「🔊 听音」按钮（`Alt+S`，输入框内也能用，因为普通 `S` 是字母）。等于听写，**不扣分**；点完自动把焦点还给输入框 |
 | 记忆留存率 | `retrievability(p)` | 优先 `fsrs.get_retrievability()`（FSRS-6 曲线，t=S 时恰为 90%），异常时退回 FSRS-5 公式 |
 | 旧进度迁移 | `buildFsrsCard()` 内 | 无 stability 字段的旧 lv/due 进度 → S=2^lv |
 | 轮次巩固 | `pendingWords()` + `renderCard()` 开头 | 队列刷完且 sessionGrades 有非 3 分 → 自动开下一轮，直到全部「认识」 |
@@ -111,8 +115,9 @@ vocab-drill/
 
 `tools/smoke.mjs` 是自带的冒烟测试：用 Node 22 内置 WebSocket 直连 Edge 的 CDP（**不需要装 Playwright**），
 用独立临时 profile + 禁用 HTTP 缓存，断言 封面落地与三指标、开始学习、FSRS 加载、四选一（4 项/仅 1 正确/文本不重复）、答错反馈与停留、
-答错落错词本、答对写 stability 且自动翻页、记忆留存率、两模式（分段控件 + 拼写认识/不认识）、例句与释义一一对齐、覆盖率 ≥95%、四页面、
-manifest/SW 外壳预缓存、词库进离线缓存、断网重载仍可用、运行期无异常。**http 31 项 / file 26 项**，两个协议都要跑：
+答错落错词本、答对写 stability 且自动翻页、识别卡自评（认识/不认识，含「作答后自评按钮收起」「认识不自动翻」）、
+**上一个/下一个（回滚后 progress 被清空、前进后恢复）**、记忆留存率、两模式（分段控件 + 拼写认识/不认识 + 听音按钮）、
+例句与释义一一对齐、覆盖率 ≥95%、四页面、manifest/SW 外壳预缓存、词库进离线缓存、断网重载仍可用、运行期无异常。**http 39 项 / file 34 项**，两个协议都要跑：
 
 ```bash
 node tools/smoke.mjs "http://127.0.0.1:8642/index.html"
@@ -121,7 +126,7 @@ node tools/smoke.mjs "file:///E:/.../vocab-drill/index.html"     # file:// 自�
 
 要写临时断言时，直接复制 `tools/smoke.mjs` 里的 `js()` 用法即可（表达式内可 `await`，外层已包 async IIFE）。
 
-**视觉回归**：`node tools/shots.mjs` 会用同样的 CDP 通道把 封面 / 识别卡 / 答错反馈 / 答对反馈 / 拼写卡 / 拼写答案 / 词书页 截到 `_tmp/shots/*.png`（该目录在 .gitignore 里），改样式后直接看图比对。
+**视觉回归**：`node tools/shots.mjs` 会用同样的 CDP 通道把 封面 / 识别卡（含自评按钮）/ 答错反馈 / 答对反馈 / **撤销回去的卡** / 拼写卡（含听音）/ 拼写答案 / 词书页 共 8 张截到 `_tmp/shots/*.png`（该目录在 .gitignore 里），改样式后直接看图比对。
 注意截图时机：答对后 0.9s 就会自动翻页，抓"答对态"必须把等待压到 150ms 内（`shot(name, preWait)` 的第二个参数）。
 
 **自动化已知坑**：
@@ -151,10 +156,18 @@ node tools/smoke.mjs "file:///E:/.../vocab-drill/index.html"     # file:// 自�
 16. **`clozeHint()` 的挖空用 ASCII `_____`**。曾用全角 `＿＿＿`，三个字宽空格看起来像 `_ _ _`，既难看又暗示了词长。
 17. 对标产品取舍（这一轮刻意借鉴的）：墨墨的「今日任务 + 数据量化」→ 封面的目标环与 7 天预测；不背单词的「沉浸卡片 + 极简」→ 卡片撑满居中、动效、留白；Anki 的「全键盘 + 间隔预览」→ 已有，本轮补了 `?` 快捷键表和方向感动效。**刻意没做**：图片联想（百词斩，需图片资源）、社交打卡（扇贝，与本地单机定位冲突）。
     v3.3 追加：识别改成**四选一**（百词斩/扇贝的"认识就过"过不了考试场景，四选一逼真回忆且能自动判分），并砍掉"自评三档 + 间隔预览按钮"——用户实测看不懂 `≈2天`，改用**答题结果 + 犹豫时长自动映射**，间隔只在答完后提示。
+    v3.4 追加：四选一里把"认识/不认识"自评加回**作为兜底选项**（用户反馈：一眼就会的词也要挑四个选项太啰嗦），两者共存——想快就自评，想练就选。撤销从单向改成**双向历史**（用户反馈：退回去发现退错了就回不来）。听音不是复活旧模式，只作为**拼写卡上的辅助按钮**（听写），不做听音辨意选择题。
+18. **回溯（上一个/下一个）的三个坑**：
+    - `HIST[i].qi` 存的是**队列下标**，所以只要 `QUEUE` 被整体替换（新一轮巩固 `QUEUE = shuffle(pendingWords())`、`buildQueue()`、`restoreSession()`）就必须 `clearHist()`，否则「上一个」会退到另一个词的卡上。`addMoreNew()` 只是 `push`，下标不变，可以不清。
+    - `S.days` 必须**整块还原**（`daysBefore` / `daysAfter`），不能只对计数做 `--`：`grade()` 里的 `dayRec(true)` 会顺手创建当天记录，减法还原不回"当天本来不存在"的状态。
+    - `undoStep()` 开头要先 `cardSeq++` 再去 `renderCard()`，否则上一个卡 0.9s 的自动翻页计时器会在回滚后触发，把卡又推走、评分白改。
+19. **`tag === 'button'` 的键盘短路**：全局 keydown 遇到按钮直接 return（防止在按钮上重复触发）。所以新加的可点控件（`#prevbtn` `#nextbtn` `#selfknow` `#selfno` `#playw`）在 click 里都要 `e.currentTarget.blur()`，否则点过一次之后空格/回车全失灵。四选一的 `.qopt` 不用管——它们点完就被 `disabled`，焦点自动回到 body。
+20. **拼写模式不能用 `S` 做听音快捷键**：输入框自动聚焦，`s` 是字母。用 `Alt+S`（输入框内单独绑一次 + 全局兜底一次）。`#playw` 点完把焦点还给输入框，否则用户得再点一下才打得字。
 
 ## 8. 待办/建议方向（按优先级）
 
-1. **错词听写**：错词本 + 纯听写（只放读音，不给释义）。拼写模式已经在，缺的是"不看释义只靠听"这一档；听音辨意（4 选 1）已随模式精简下线，真要做听，建议做成听写而不是再回到选择题。
+1. **错词听写**：错词本 + 纯听写（只放读音，不给释义）。v3.4 已经给了拼写卡上的「🔊 听音」按钮（`Alt+S`），缺的只是"**全局**听写模式"：释义不显示、只听音拼，或者错词本一键听写。真要做听，走这条路，别再回到听音辨意选择题。
+   - 顺带可以考虑"用没用听音"落个标记，让提示过的卡最高记 2 分（现在故意不扣，保持简单；用户明确说过别让他操心评分）。
 2. **自定义词库导入**：粘贴/上传词表 → 生成 `VD_DATA.custom`（沿用现有 script 数据格式），导入后自动出现在词书下拉里。墨墨的招牌能力，本地化实现不难。
 3. **随身听（后台听）**：连续播单词+释义，锁屏也能放——不背单词的强项，用现有 SpeechSynthesis 拼一个即可。
 4. **FSRS 参数个性化（优化器）**：目前只有目标记忆率可调；积累复习记录后可接 ts-fsrs 的 optimizer 反推 w 参数（需要 review log，现在没存——要做得先在 `grade()` 里落 log）。另外"犹豫时长 → 模糊"目前是固定阈值（识别 6s / 拼写 12s），可以改成按个人中位反应时自适应。
@@ -182,7 +195,7 @@ python tools/make_icons.py
 # 语法检查 + 冒烟测试（无构建，这就是全部检查）
 node --check js/app.js && node --check sw.js
 python -m http.server 8642 --bind 127.0.0.1 &
-node tools/smoke.mjs                      # 31 项断言（http）/ 26 项（file）
+node tools/smoke.mjs                      # 39 项断言（http）/ 34 项（file）
 node tools/shots.mjs                      # 截图到 _tmp/shots/，肉眼比对
 node tools/smoke.mjs "file:///E:/.../vocab-drill/index.html"
 

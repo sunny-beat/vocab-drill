@@ -11,7 +11,7 @@ const BOOKS = {
 };
 const PAGES = ['study', 'books', 'dict', 'list'];
 const LS_KEY = 'vocabdrill.v2';
-const APP_VER = '3.3.0';
+const APP_VER = '3.4.0';
 
 /* ================= FSRS-6 记忆算法（ts-fsrs 本地全局包） ================= */
 /* 评分 1=Again 2=Hard 3=Good；进度字段：{ due, stability, difficulty, last, state, lv, wrong, lastWrong } */
@@ -204,12 +204,17 @@ let roundStats = [];      // 每个巩固轮开始时的待过词数
 let firstPassCount = 0;   // 首轮刷卡词数（成绩单用）
 let session = { n: 0, r: 0 };
 let sessionMode = 'normal';   // normal | wrong
-let lastUndo = null;
+/* 刷卡历史：每张已评分的卡存一份快照，「上一个」回滚、「下一个」原样恢复 */
+let HIST = [];
+let HPOS = 0;                 // HIST 中已生效的条数；HPOS < HIST.length 说明还能「下一个」
 let spellChecked = false;
 let spellStart = 0;
 let pendingSpell = null;
 let quizOpts = [], quizAnswered = false, quizStart = 0, cardSeq = 0;
 let current = null;
+
+function clone(o) { return JSON.parse(JSON.stringify(o)); }
+function clearHist() { HIST = []; HPOS = 0; }
 
 function shuffle(a) {
   for (let i = a.length - 1; i > 0; i--) {
@@ -298,7 +303,7 @@ async function buildQueue(opts) {
     QUEUE = shuffle(due).concat(cwUnseen.slice(0, quota));
   }
   QI = 0; sessionGrades = {}; round = 1; roundStats = []; firstPassCount = 0;
-  session = { n: 0, r: 0 }; lastUndo = null;
+  session = { n: 0, r: 0 }; clearHist();
   S.session = null;   // 新队列 = 新会话，丢弃旧会话快照
   save();
   renderCard();
@@ -339,7 +344,7 @@ function restoreSession(s) {
   firstPassCount = s.first || 0;
   session = { n: (s.counts && s.counts.n) || 0, r: (s.counts && s.counts.r) || 0 };
   sessionMode = 'normal';
-  lastUndo = null;
+  clearHist();   // 历史只活在本次会话内，刷新后从当前位置重新记
   if (s.chapter != null && s.chapter < CHAPTERS.length) {
     CUR_CH = s.chapter;
     S.books[S.settings.book] = { chapter: CUR_CH };
@@ -356,9 +361,16 @@ function grade(g) {
   const w = current[0];
   const p = S.progress[w];
   const isNew = !p;
-  lastUndo = { w: w, prev: p ? JSON.parse(JSON.stringify(p)) : null,
-    days: JSON.parse(JSON.stringify(S.days)),
-    prevSG: Object.prototype.hasOwnProperty.call(sessionGrades, w) ? sessionGrades[w] : null };
+  // 评分前先留快照：「上一个」靠它回滚，「下一个」靠 np/daysAfter 原样恢复
+  const snap = {
+    w: w, qi: QI, g: g, isNew: isNew,
+    prev: p ? clone(p) : null,
+    daysBefore: clone(S.days),
+    prevSG: Object.prototype.hasOwnProperty.call(sessionGrades, w) ? sessionGrades[w] : null
+  };
+  HIST.length = HPOS;      // 在回溯位置重答 = 丢掉后面的重做分支
+  HIST.push(snap);
+  HPOS++;
 
   const now = Date.now();
   const Fk = F();
@@ -392,24 +404,48 @@ function grade(g) {
 
   const d = dayRec(true);
   if (isNew) { d.n++; session.n++; } else { d.r++; session.r++; }
+  snap.np = clone(np);
+  snap.daysAfter = clone(S.days);
   save();
   QI++;
   saveSession();   // 快照指向下一张卡，恢复后无缝续刷
   renderCard(g);
 }
 
-function undo() {
-  if (!lastUndo || QI <= 0) return;
-  const u = lastUndo;
-  if (u.prev) S.progress[u.w] = u.prev; else delete S.progress[u.w];
-  S.days = u.days;
-  if (u.prevSG == null) delete sessionGrades[u.w]; else sessionGrades[u.w] = u.prevSG;
+/* 上一个：回滚这一张的评分，把卡重新摆出来（可以改答案） */
+function undoStep() {
+  if (HPOS <= 0) return false;
+  cardSeq++;                      // 作废可能还在等待的自动翻页
+  const s = HIST[HPOS - 1];
+  if (s.prev) S.progress[s.w] = clone(s.prev); else delete S.progress[s.w];
+  S.days = clone(s.daysBefore);
+  if (s.prevSG == null) delete sessionGrades[s.w]; else sessionGrades[s.w] = s.prevSG;
+  if (s.isNew) session.n = Math.max(0, session.n - 1); else session.r = Math.max(0, session.r - 1);
+  HPOS--;
+  QI = s.qi;
   save();
-  lastUndo = null;
-  QI--;
   saveSession();
-  renderCard();
-  toast('已撤销上一张');
+  renderCard(2);
+  toast('回到「' + s.w + '」，评分已回滚');
+  return true;
+}
+
+/* 下一个：把刚撤销的那次评分原样写回，不用重答 */
+function redoStep() {
+  if (HPOS >= HIST.length) return false;
+  cardSeq++;
+  const s = HIST[HPOS];
+  S.progress[s.w] = clone(s.np);
+  S.days = clone(s.daysAfter);
+  if (sessionMode === 'normal') sessionGrades[s.w] = s.g;
+  if (s.isNew) session.n++; else session.r++;
+  HPOS++;
+  QI = s.qi + 1;
+  save();
+  saveSession();
+  renderCard(3);
+  toast('恢复「' + s.w + '」的评分');
+  return true;
 }
 
 /* ================= 渲染基础 ================= */
@@ -508,9 +544,17 @@ function tagOf(p) {
   if (!p) return '新词';
   return p.lv >= 3 ? '复习' : '巩固';
 }
-/* 撤销入口：评分给错了还能退回来（Ctrl+Z 同效） */
-function undoChip() {
-  return lastUndo ? ' <button id="undobtn" class="linkhint undo" title="撤销上一张 (Ctrl+Z)">↩ 撤销</button>' : '';
+/* 回溯入口：给错分了可以往回退，退回去还能再往前（Ctrl+Z / Ctrl+Shift+Z 同效） */
+function navChip() {
+  if (!HIST.length) return '';
+  let out = '';
+  if (HPOS > 0) {
+    out += ' <button id="prevbtn" class="linkhint undo" title="回到上一张，这一张的评分会回滚 (Ctrl+Z)">↩ 上一个</button>';
+  }
+  if (HPOS < HIST.length) {
+    out += ' <button id="nextbtn" class="linkhint undo" title="恢复刚刚撤销的评分，直接往前走，不用重答 (Ctrl+Shift+Z)">下一个 ↪</button>';
+  }
+  return out;
 }
 
 function starLabel(w) {
@@ -621,7 +665,7 @@ function renderHero() {
     '<button id="hero-start" class="cta">' + ctaText + '</button>' +
     '<button id="hero-ch" class="big">选章节</button>' +
     '</div>' +
-    '<p class="hero-tip">1–4 选释义 · 答对自动翻页 · M 切模式 · ? 看全部快捷键</p>';
+    '<p class="hero-tip">1–4 选释义 · 回车认识 / Esc 不认识 · Ctrl+Z 回上一张 · ? 看全部快捷键</p>';
 
   const st = $('hero-start');
   if (st) st.addEventListener('click', function () { startSession(); });
@@ -652,6 +696,7 @@ function renderCard(dir) {
       roundStats.push({ round: round, count: pendingWords().length });
       QUEUE = shuffle(pendingWords());
       QI = 0;
+      clearHist();     // 队列换成新一轮，旧下标不再对应
       saveSession();
       toast('第 ' + round + ' 轮巩固：' + QUEUE.length + ' 词再过一遍，全部答对即完成');
     } else {
@@ -682,7 +727,7 @@ function renderCard(dir) {
     card.innerHTML =
       '<div class="tagline">' + (round > 1 ? '第' + round + '轮巩固 · ' : '') + tagOf(p) +
       (freq ? ' · <span class="freqmark">高频</span>' : '') + (ret != null ? ' · 记忆 ' + ret + '%' : '') +
-      undoChip() + '</div>' +
+      navChip() + '</div>' +
       '<div class="word">' + esc(w) +
       ' <button id="speak" class="icon" title="发音 (S)">🔊</button>' +
       ' <button id="starbtn" class="icon' + ((S.stars[w] || 0) ? ' starred' : '') + '" title="收藏：点一下收藏，再点设为重点，再点取消">' + starLabel(w) + '</button></div>' +
@@ -694,16 +739,23 @@ function renderCard(dir) {
           '<span class="qtext">' + esc(o.text) + '</span></button>';
       }).join('') +
       '</div>' +
+      '<div id="selfrow" class="selfrow">' +
+      '<button id="selfknow" class="selfbtn know" title="一眼就认识，不必挑了：直接记为认识（回车）">认识 <kbd>回车</kbd></button>' +
+      '<button id="selfno" class="selfbtn no" title="完全不认识：直接看答案，记为不认识（Esc）">不认识 <kbd>Esc</kbd></button>' +
+      '</div>' +
       '<div id="qfb" class="qfb"></div>';
   } else {
     const cloze = clozeHint(w, current);
     spellStart = Date.now();
     card.innerHTML =
-      '<div class="tagline">拼写 · ' + tagOf(p) + undoChip() + '</div>' +
+      '<div class="tagline">拼写 · ' + tagOf(p) + navChip() + '</div>' +
       '<div class="meaning prompt">' + defs.map(function (d) { return esc(d); }).join('<br>') + '</div>' +
       (cloze
         ? '<div class="sent cloze"><span class="en">' + esc(cloze) + '</span></div>'
         : '<div class="hint">' + hintPattern(w) + '</div>') +
+      '<div class="listenrow">' +
+      '<button id="playw" class="big ghost listen" title="听发音再拼，等于听写（Alt+S）">🔊 听音</button>' +
+      '</div>' +
       '<input id="spell" class="spell" autocomplete="off" autocapitalize="off" ' +
       'spellcheck="false" placeholder="拼出这个单词，回车判定">' +
       '<div id="spellfb" class="spellfb"></div>' +
@@ -711,14 +763,22 @@ function renderCard(dir) {
       '<button id="skip" class="big" title="直接看答案，记为不认识">不认识 <kbd>Esc</kbd></button>' +
       '<button id="submit" class="primary big" title="我认识，把它拼出来">认识 <kbd>回车</kbd></button>' +
       '</div>' +
-      '<p class="muted tinyhint">「认识」= 把单词拼出来提交；拼错或想不起来就点「不认识」看答案。</p>';
+      '<p class="muted tinyhint">「认识」= 把单词拼出来提交；拼错或想不起来就点「不认识」看答案。听音等于听写，不扣分。</p>';
     const inp = $('spell');
     inp.focus();
     inp.addEventListener('keydown', function (e) {
       if (e.key === 'Enter') { e.preventDefault(); checkSpell(); }
       else if (e.key === 'Escape') { e.preventDefault(); showSpellAnswer(false, true); }
+      else if (e.altKey && e.key.toLowerCase() === 's') { e.preventDefault(); speak(w); }
     });
     $('submit').addEventListener('click', checkSpell);
+    const pw = $('playw');
+    if (pw) pw.addEventListener('click', function (e) {
+      e.currentTarget.blur();
+      speak(w);
+      const i2 = $('spell');
+      if (i2 && !spellChecked) i2.focus();   // 听完能直接接着打字
+    });
   }
 
   const sp = $('speak');
@@ -730,8 +790,14 @@ function renderCard(dir) {
   card.querySelectorAll('.qopt').forEach(function (b) {
     b.addEventListener('click', function () { answerQuiz(+b.dataset.i); });
   });
-  const ub = $('undobtn');
-  if (ub) ub.addEventListener('click', undo);
+  const kb = $('selfknow');
+  if (kb) kb.addEventListener('click', function (e) { e.currentTarget.blur(); selfAssess(true); });
+  const nb2 = $('selfno');
+  if (nb2) nb2.addEventListener('click', function (e) { e.currentTarget.blur(); selfAssess(false); });
+  const pb = $('prevbtn');
+  if (pb) pb.addEventListener('click', function (e) { e.currentTarget.blur(); undoStep(); });
+  const rb = $('nextbtn');
+  if (rb) rb.addEventListener('click', function (e) { e.currentTarget.blur(); redoStep(); });
   card.querySelectorAll('.grade').forEach(function (b) {
     b.addEventListener('click', function () { grade(+b.dataset.g); });
   });
@@ -793,11 +859,21 @@ function buildQuizOptions(entry) {
 
 function answerQuiz(i) {
   if (quizAnswered || !quizOpts[i] || !current) return;
-  quizAnswered = true;
   const ok = quizOpts[i].ok;
   const dt = Date.now() - quizStart;
   // 答对但磨了 6 秒以上 → 记为「模糊」；比让用户在按钮上猜 2天/3天 更贴近实战
   const g = ok ? (dt > 6000 ? 2 : 3) : 1;
+  settleQuiz(ok, g, i, false);
+}
+
+/* 自评：一眼认识或完全不认识，不必走选择题（不计超时，自评就是自评） */
+function selfAssess(ok) {
+  if (quizAnswered || !current) return;
+  settleQuiz(ok, ok ? 3 : 1, -1, true);
+}
+
+function settleQuiz(ok, g, idx, self) {
+  quizAnswered = true;
   pendingSpell = g;
   const seq = cardSeq;
   const w = current[0];
@@ -806,14 +882,17 @@ function answerQuiz(i) {
   document.querySelectorAll('#qopts .qopt').forEach(function (b, j) {
     b.disabled = true;
     if (quizOpts[j] && quizOpts[j].ok) b.classList.add('qopt-ok');
-    else if (j === i) b.classList.add('qopt-bad');
+    else if (j === idx) b.classList.add('qopt-bad');
     else b.classList.add('qopt-dim');
   });
+  const sr = $('selfrow');
+  if (sr) sr.remove();          // 已作答，自评按钮就没必要了
 
   const fb = $('qfb');
   if (!fb) return;
+  const label = ok ? (self ? '✓ 认识' : '✓ 正确') : (self ? '✗ 不认识' : '✗ 答错了');
   fb.innerHTML =
-    '<div class="qres ' + (ok ? 'ok' : 'bad') + '">' + (ok ? '✓ 正确' : '✗ 答错了') +
+    '<div class="qres ' + (ok ? 'ok' : 'bad') + '">' + label +
     (g === 2 ? '<span class="qnote">想得有点久，记为「模糊」</span>' : '') +
     '<span class="qwhen">下次复习：' + nextIntervalPreview(p, g) + '</span></div>' +
     '<div class="meaning qmean">' + defsHtml(current[1], current[6]) +
@@ -824,8 +903,8 @@ function answerQuiz(i) {
   $('qnext').addEventListener('click', function () { if (seq === cardSeq) grade(g); });
 
   if (!ok) speak(w);
-  if (ok) {
-    // 答对不打断节奏：900ms 后自动翻到下一张，中途按空格可立刻前进
+  // 用选项答对的节奏最快，不打断：900ms 后自动翻页；自评「认识」先把释义亮出来给人确认
+  if (ok && !self) {
     setTimeout(function () {
       if (seq === cardSeq && quizAnswered && S.page === 'study') grade(g);
     }, 900);
@@ -886,6 +965,8 @@ function showSpellAnswer(ok, skipped) {
   if (cz) cz.remove();
   const th = card.querySelector('.tinyhint');
   if (th) th.remove();
+  const lr = card.querySelector('.listenrow');
+  if (lr) lr.remove();          // 答案块里已经有发音按钮，别重复
   const pr = card.querySelector('.meaning.prompt');
   if (pr) pr.remove();          // 答案块里已经有释义了，别重复
   const fb = $('spellfb');
@@ -908,6 +989,7 @@ function showSpellAnswer(ok, skipped) {
 function renderDone() {
   cardSeq++;   // 作废还在等待中的自动翻页
   current = null;
+  clearHist();
   S.session = null; save();   // 本批结束，清除会话快照
   const card = $('card');
   const d = dayRec();
@@ -1595,13 +1677,15 @@ function openSettings() {
 function openKeys() {
   const rows = [
     ['1 – 4', '识别：选第 1~4 个释义'],
-    ['空格', '答完后翻到下一张（答对会自动翻）'],
-    ['回车', '拼写：提交答案'],
-    ['Esc', '拼写：不认识，直接看答案'],
-    ['S', '朗读当前单词'],
+    ['回车', '识别：认识（自评）／ 拼写：提交答案'],
+    ['Esc', '不认识，直接看答案'],
+    ['空格', '答完后翻到下一张（用选项答对会自动翻）'],
+    ['Alt+S', '拼写：听发音（等于听写）'],
+    ['S', '识别：朗读当前单词'],
     ['F', '收藏（再按设为重点，三次取消）'],
     ['M', '在识别 / 拼写之间切换'],
-    ['Ctrl+Z', '撤销上一张（评分可回滚）'],
+    ['Ctrl+Z', '上一个：回滚上一张的评分，可以重答'],
+    ['Ctrl+Shift+Z', '下一个：恢复刚撤销的评分，直接往前走'],
     ['/', '跳到查词页'],
     ['?', '打开这个快捷键表'],
     ['Esc', '关闭弹窗 / 回到学习页'],
@@ -1609,12 +1693,15 @@ function openKeys() {
   ];
   $('modal-body').innerHTML =
     '<h2>⌨️ 快捷键</h2>' +
-    '<p class="muted" style="font-size:12px;margin-bottom:10px">全程可以不开鼠标：1–4 答题，答完空格翻页，一路刷下去。</p>' +
+    '<p class="muted" style="font-size:12px;margin-bottom:10px">全程可以不开鼠标：1–4 答题，答完空格翻页，一路刷下去。' +
+    '识别卡上一眼就会或完全不认识，也可以直接回车 / Esc 自评。</p>' +
     '<div class="kbd-grid">' + rows.map(function (r) {
       return '<div><kbd>' + esc(r[0]) + '</kbd><span>' + esc(r[1]) + '</span></div>';
     }).join('') + '</div>' +
-    '<p class="muted" style="font-size:12px;margin-top:12px">评分只有三档，但不用你手动挑：答对＝认识，答对但磨蹭超过 6 秒＝模糊，答错＝不认识。' +
-    '「下次复习」的间隔由 FSRS 按你的历史表现算，只作提示，不参与答题。</p>';
+    '<p class="muted" style="font-size:12px;margin-top:12px">评分只有三档，但不用你手动挑：答对或自评「认识」＝认识，答对但磨蹭超过 6 秒＝模糊，答错或不认识＝不认识。' +
+    '「下次复习」的间隔由 FSRS 按你的历史表现算，只作提示，不参与答题。</p>' +
+    '<p class="muted" style="font-size:12px;margin-top:8px">「上一个 / 下一个」是评分回溯：往回退会把那张的进度、错词数、今日计数一起还原，' +
+    '所以连着退几张也不会把统计搞乱。</p>';
   $('modal').classList.remove('hidden');
 }
 
@@ -1732,7 +1819,13 @@ function wireUI() {
   });
 
   document.addEventListener('keydown', function (e) {
-    if (e.ctrlKey && e.key.toLowerCase() === 'z') { e.preventDefault(); undo(); return; }
+    // 上一个 / 下一个：Ctrl+Z 回滚上一张，Ctrl+Shift+Z（或 Ctrl+Y）再走回来
+    if (e.ctrlKey && !e.altKey && e.key.toLowerCase() === 'z') {
+      e.preventDefault();
+      if (e.shiftKey) redoStep(); else undoStep();
+      return;
+    }
+    if (e.ctrlKey && !e.altKey && e.key.toLowerCase() === 'y') { e.preventDefault(); redoStep(); return; }
     if (!$('modal').classList.contains('hidden')) {
       if (e.key === 'Escape') closeModal();
       return;
@@ -1765,6 +1858,8 @@ function wireUI() {
     if (S.settings.mode === 'recog') {
       if (!quizAnswered) {
         if (e.key >= '1' && e.key <= '4') { e.preventDefault(); answerQuiz(+e.key - 1); }
+        else if (e.key === 'Enter') { e.preventDefault(); selfAssess(true); }
+        else if (e.key === 'Escape') { e.preventDefault(); selfAssess(false); }
         else if (e.key.toLowerCase() === 's' && current) speak(current[0]);
         else if (e.key.toLowerCase() === 'f' && current) starCycle(current[0]);
         else if (e.key.toLowerCase() === 'm') toggleMode();
@@ -1777,7 +1872,9 @@ function wireUI() {
         else if (e.key.toLowerCase() === 'm') toggleMode();
       }
     } else {
-      if (spellChecked) {
+      if (e.altKey && e.key.toLowerCase() === 's' && current) {
+        e.preventDefault(); speak(current[0]);
+      } else if (spellChecked) {
         if (e.key === 'Enter' || e.code === 'Space' || e.key === ' ') {
           e.preventDefault(); grade(pendingSpell);
         } else if (e.key.toLowerCase() === 'm') toggleMode();

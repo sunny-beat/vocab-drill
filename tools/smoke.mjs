@@ -201,6 +201,72 @@ if (!first.card || first.n !== 4) {
   check('答对后自动翻到下一张', right.moved);
 }
 
+// ---------- 2b. 识别卡自评（认识 / 不认识） ----------
+const selfBtns = await js(`
+  return { know: !!document.getElementById('selfknow'), no: !!document.getElementById('selfno') };
+`);
+check('识别卡提供「认识 / 不认识」自评', selfBtns.know && selfBtns.no, selfBtns);
+
+const selfNo = await js(`
+  var w = document.querySelector('.word').firstChild.textContent.trim();
+  document.getElementById('selfno').click();
+  await new Promise(r => setTimeout(r, 300));
+  var fb = document.getElementById('qfb');
+  var st = JSON.parse(localStorage.getItem('vocabdrill.v2') || '{}');
+  var p = st.progress && st.progress[w];
+  var res = fb.querySelector('.qres');
+  return {
+    word: w,
+    bad: res ? res.classList.contains('bad') : false,
+    mean: !!fb.querySelector('.meaning .dline'),
+    stayed: document.querySelector('.word').firstChild.textContent.trim() === w,
+    stateRow: !!document.getElementById('selfrow')
+  };
+`);
+check('自评「不认识」→ 亮出释义并停在原地', selfNo.bad && selfNo.mean && selfNo.stayed, selfNo);
+check('作答后自评按钮收起', !selfNo.stateRow);
+
+// ---------- 2c. 上一个 / 下一个（评分回溯，可双向） ----------
+const nav = await js(`
+  var L = function () { return JSON.parse(localStorage.getItem('vocabdrill.v2') || '{}'); };
+  var wordNow = function () {
+    var el = document.querySelector('.word');
+    return el ? el.firstChild.textContent.trim() : '';
+  };
+  var w1 = wordNow();
+  document.getElementById('qnext').click();
+  await new Promise(r => setTimeout(r, 450));
+  var g = { word: wordNow(), prev: !!document.getElementById('prevbtn'), wrong: (L().progress[w1] || {}).wrong };
+
+  document.getElementById('prevbtn').click();
+  await new Promise(r => setTimeout(r, 450));
+  var u = { back: wordNow() === w1, next: !!document.getElementById('nextbtn'), cleared: !L().progress[w1] };
+
+  document.getElementById('nextbtn').click();
+  await new Promise(r => setTimeout(r, 450));
+  var r = { word: wordNow(), wrong: (L().progress[w1] || {}).wrong };
+  return { w1: w1, g: g, u: u, r: r };
+`);
+check('评分后出现「上一个」', nav.g.prev && nav.g.word !== nav.w1, nav.g);
+check('「上一个」回滚评分并退回那张卡', nav.u.back && nav.u.cleared, nav.u);
+check('「下一个」恢复评分并继续前进', nav.r.wrong >= 1 && nav.r.word === nav.g.word, nav.r);
+
+// ---------- 2d. 自评「认识」 ----------
+const selfYes = await js(`
+  var w = document.querySelector('.word').firstChild.textContent.trim();
+  var b = document.getElementById('selfknow');
+  b.click();
+  await new Promise(r => setTimeout(r, 300));
+  var fb = document.getElementById('qfb');
+  var res = fb.querySelector('.qres');
+  return {
+    ok: res ? res.classList.contains('ok') : false,
+    mean: !!fb.querySelector('.meaning .dline'),
+    stayed: document.querySelector('.word').firstChild.textContent.trim() === w
+  };
+`);
+check('自评「认识」→ 亮出释义让人确认（不自动翻）', selfYes.ok && selfYes.mean && selfYes.stayed, selfYes);
+
 // ---------- 3. 记忆留存率 ----------
 const ret = await js(`
   return retrievability({ stability: 5, difficulty: 5, last: Date.now() - 5*86400000, state: 2, due: Date.now() });
@@ -220,6 +286,7 @@ const modes = await js(`
   out.spell = !!document.getElementById('spell');
   out.hasKnow = !!document.getElementById('submit');
   out.hasSkip = !!document.getElementById('skip');
+  out.hasPlay = !!document.getElementById('playw');
   out.spellOn = document.querySelector('#modeseg button[data-mode="spell"]').classList.contains('on');
   document.getElementById('skip').click();
   await new Promise(r => setTimeout(r, 250));
@@ -234,6 +301,7 @@ const modes = await js(`
 `);
 check('听音模式已下线（分段控件 2 项）', modes.segN === 2, modes.segN);
 check('拼写模式有「认识 / 不认识」两个选项', modes.spell && modes.hasKnow && modes.hasSkip, modes);
+check('拼写模式有听音按钮', modes.hasPlay, modes.hasPlay);
 check('拼写「不认识」直接看答案', modes.spellFb, modes.spellFb);
 check('分段控件高亮当前模式', modes.spellOn);
 check('切回识别仍是四选一', modes.backToRecog);

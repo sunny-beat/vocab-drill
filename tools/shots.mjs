@@ -98,6 +98,17 @@ await js(`
 `);
 await shot('04-recog-right', 120);
 
+// 答完 → 上一个：退回去那张卡，tagline 里应同时出现「下一个 ↪」
+await js(`
+  var nd = document.getElementById('qnext');
+  if (nd) nd.click();
+  await new Promise(r => setTimeout(r, 600));
+  var pb = document.getElementById('prevbtn');
+  if (pb) pb.click();
+  return 1;
+`);
+await shot('05-recog-back');
+
 await js(`
   var nd = document.getElementById('qnext');
   if (nd) nd.click();
@@ -105,10 +116,10 @@ await js(`
   document.querySelector('#modeseg button[data-mode="spell"]').click();
   return 1;
 `);
-await shot('05-spell');
+await shot('06-spell');
 
 await js('document.getElementById("skip").click(); return 1;');
-await shot('06-spell-answer');
+await shot('07-spell-answer');
 
 await js(`
   document.getElementById('next').click();
@@ -117,7 +128,7 @@ await js(`
   return 1;
 `);
 await wait(1600);
-await shot('07-books');
+await shot('08-books');
 
 ws.close();
 proc.kill();

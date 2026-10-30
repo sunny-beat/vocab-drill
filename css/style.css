@@ -455,6 +455,36 @@ input.spell.wrong { border-color: var(--bad); }
 .qopt-bad { border-color: var(--bad); background: var(--bad-weak); color: var(--bad); }
 .qopt-bad .qkey { background: var(--bad); color: #fff; }
 .qopt-dim { opacity: .42; }
+/* 自评兜底：一眼认识 / 完全不认识，绕过四选一 */
+.selfrow {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  width: 100%;
+  max-width: 640px;
+  margin-top: -2px;
+  animation: fadein .22s ease-out;
+}
+.selfbtn {
+  font: inherit;
+  font-size: 13px;
+  padding: 7px 16px;
+  border-radius: 10px;
+  border: 1px dashed var(--border);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  transition: color .15s, border-color .15s, background .15s, transform .08s;
+}
+.selfbtn:hover { color: var(--fg); border-color: var(--accent); }
+.selfbtn:active { transform: scale(.96); }
+.selfbtn.know:hover { color: var(--ok); border-color: var(--ok); background: var(--ok-weak); }
+.selfbtn.no:hover { color: var(--bad); border-color: var(--bad); background: var(--bad-weak); }
+.selfbtn kbd { margin-left: 5px; background: transparent; }
+/* 拼写：听音（当听写用） */
+.listenrow { display: flex; justify-content: center; width: 100%; }
+.listenrow .listen { font-size: 13px; padding: 7px 18px; }
+.listenrow .listen:hover { color: var(--accent); }
 .qfb { width: 100%; max-width: 640px; display: flex; flex-direction: column; align-items: center; gap: 8px; }
 .qfb:empty { display: none; }
 .qfb .meaning { max-width: 100%; }
