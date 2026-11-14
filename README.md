@@ -3,11 +3,12 @@
 <img src="docs/banner.svg" alt="唯单词 · Vocab Drill" width="100%">
 
 <img src="https://img.shields.io/badge/version-6.11.4-1a6d4f?style=flat-square" alt="version">
-<img src="https://img.shields.io/badge/依赖-0%20个-2f7355?style=flat-square" alt="zero deps">
-<img src="https://img.shields.io/badge/词库-9%2C861%20词-43c08a?style=flat-square" alt="words">
-<img src="https://img.shields.io/badge/可查词-98%2C159-43c08a?style=flat-square" alt="dict">
-<img src="https://img.shields.io/badge/真题例句-15%2C250%20条-43c08a?style=flat-square" alt="papers">
-<img src="https://img.shields.io/badge/PWA-离线可用-69b58c?style=flat-square" alt="pwa">
+<img src="https://img.shields.io/badge/dependencies-0-2f7355?style=flat-square" alt="zero deps">
+<img src="https://img.shields.io/badge/vocab-9%2C861%20words-43c08a?style=flat-square" alt="words">
+<img src="https://img.shields.io/badge/dictionary-98%2C159%20words-43c08a?style=flat-square" alt="dictionary">
+<img src="https://img.shields.io/badge/exam%20sentences-15%2C250-43c08a?style=flat-square" alt="exam sentences">
+<img src="https://img.shields.io/badge/PWA-offline%20ready-69b58c?style=flat-square" alt="pwa">
+<img src="https://img.shields.io/badge/license-MIT-6c757d?style=flat-square" alt="license">
 
 **键盘流背单词。一义一例，真题作证，记忆曲线兜底。**
 
