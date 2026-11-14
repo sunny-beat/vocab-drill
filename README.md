@@ -27,61 +27,60 @@
 背的是**六级 / 考研**的考纲词，但释义、搭配、例句、真题出处是按「考场上要认出这个词」的标准重做的 —— 不是从词典里搬一条中文过来。
 
 <table>
-<tr><td width="50%">
-
-**不联网也能背完一整本**
-Service Worker 把外壳和词库都缓存到本地。断网、飞行模式、地铁里，一样能刷。
-
-</td><td width="50%">
-
-**手机电脑共用一份进度**
-同一个账号登录，电脑上背到第 30 个，手机打开就是第 30 个，不是各自为战。
-
-</td></tr>
-<tr><td>
-
-**双击一个 HTML 文件就能用**
-20 MB 的单文件版把词库、字典、真题全塞进一个 `.html`，拷到没网的电脑上照样查任何词。
-
-</td><td>
-
-**键盘就是全部操作**
-`1-4` 选答案、`回车` 认识、`Esc` 不认识、`空格` 下一个。手不离键盘，眼不离词。
-
-</td></tr>
+<tr>
+<td width="50%">
+<p><b>不联网也能背完一整本</b><br>
+Service Worker 把外壳和词库都缓存到本地。断网、飞行模式、地铁里，一样能刷。</p>
+</td>
+<td width="50%">
+<p><b>手机电脑共用一份进度</b><br>
+同一个账号登录，电脑上背到第 30 个，手机打开就是第 30 个，不是各自为战。</p>
+</td>
+</tr>
+<tr>
+<td width="50%">
+<p><b>双击一个 HTML 文件就能用</b><br>
+20 MB 的单文件版把词库、字典、真题全塞进一个 <code>.html</code>，拷到没网的电脑上照样查任何词。</p>
+</td>
+<td width="50%">
+<p><b>键盘就是全部操作</b><br>
+<code>1-4</code> 选答案、<code>回车</code> 认识、<code>Esc</code> 不认识、<code>空格</code> 下一个。手不离键盘，眼不离词。</p>
+</td>
+</tr>
 </table>
 
 ## 看一眼
 
+<img src="docs/shots/01-hero-light.png" alt="今日任务台" width="100%">
+
+<div align="center"><sub><b>今日任务台</b> —— 背新词和复习是两条独立任务线，各自记住当天进度；右边的书脊就是今日完成度</sub></div>
+
 <table>
 <tr>
-<td width="50%"><img src="docs/shots/01-hero-light.png" alt="今日任务台"></td>
 <td width="50%"><img src="docs/shots/02-card-recog.png" alt="识别卡"></td>
+<td width="50%"><img src="docs/shots/03-dict.png" alt="查词卡"></td>
 </tr>
 <tr>
-<td align="center"><sub><b>今日任务台</b> · 背新词和复习是两条独立任务线，各自记住进度</sub></td>
-<td align="center"><sub><b>识别卡</b> · 先看词回忆，再四选一；答完才给释义和例句</sub></td>
-</tr>
-<tr>
-<td><img src="docs/shots/03-dict.png" alt="查词卡"></td>
-<td><img src="docs/shots/04-books.png" alt="词书章节"></td>
-</tr>
-<tr>
+<td align="center"><sub><b>识别卡</b> · 先回忆，再四选一；答完才给释义和例句</sub></td>
 <td align="center"><sub><b>查词卡</b> · 真题例句带年份和题型，一路可点到原文</sub></td>
-<td align="center"><sub><b>章节网格</b> · 按字母和难度切 200 多个 List，缺哪块一眼看得出</sub></td>
 </tr>
 </table>
 
 <table>
 <tr>
-<td width="62%"><img src="docs/shots/05-hero-dark.png" alt="深色主题"></td>
-<td width="38%"><img src="docs/shots/06-mobile.png" alt="手机端"></td>
+<td width="50%"><img src="docs/shots/04-books.png" alt="词书章节"></td>
+<td width="50%"><img src="docs/shots/05-hero-dark.png" alt="深色主题"></td>
 </tr>
 <tr>
-<td align="center"><sub><b>深色主题</b> · 夜里背不刺眼</sub></td>
-<td align="center"><sub><b>手机端</b> · 单列布局，拇指够得到所有按钮</sub></td>
+<td align="center"><sub><b>章节网格</b> · 按首字母切 200 多个 List，缺哪块一眼看得出</sub></td>
+<td align="center"><sub><b>深色主题</b> · 不是反色，是重新配的一套颜色</sub></td>
 </tr>
 </table>
+
+<div align="center">
+<img src="docs/shots/06-mobile.png" alt="手机端" width="330">
+<br><sub><b>手机端</b> · 单列布局，拇指够得到所有按钮；可添加到主屏幕当原生 App 用</sub>
+</div>
 
 ## 为什么它不一样
 
