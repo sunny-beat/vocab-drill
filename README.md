@@ -13,7 +13,7 @@
 **键盘流背单词。一义一例，真题作证，记忆曲线兜底。**
 
 [🌐 线上直接用](https://vocab-drill-12129.app.workbuddy.host/?sharecode=46MZWZWZMD) ·
-[📦 单文件版](#三种打开方式) ·
+[⬇️ 下载安装包](#下载) ·
 [🧠 它和别的背词软件哪里不一样](#为什么它不一样) ·
 [⌨️ 快捷键](#键盘就是全部操作)
 
@@ -49,6 +49,23 @@ Service Worker 把外壳和词库都缓存到本地。断网、飞行模式、�
 </td>
 </tr>
 </table>
+
+## 下载
+
+三个包都挂在 [Releases](https://github.com/sunny-beat/vocab-drill/releases/latest)，点开就能下，不需要装 Git。
+
+| 平台 | 文件 | 大小 | 说明 |
+|:--:|---|---:|---|
+| **Android** | [`weidanci-6.11.4.apk`](https://github.com/sunny-beat/vocab-drill/releases/download/v6.11.4/weidanci-6.11.4.apk) | 57 KB | 在线同步版。首启联网一次（约 20 MB），之后断网可用；可直接覆盖旧版升级 |
+| **Windows** | [`weidanci-setup-6.11.4.exe`](https://github.com/sunny-beat/vocab-drill/releases/download/v6.11.4/weidanci-setup-6.11.4.exe) | 82 MB | 装到当前用户目录，不需要管理员权限；自带卸载 |
+| **任意系统** | [`weidanci-standalone-6.11.4.html`](https://github.com/sunny-beat/vocab-drill/releases/download/v6.11.4/weidanci-standalone-6.11.4.html) | 20 MB | 单文件版：双击即用、零外链、**不含云同步**（进度用 JSON 导入导出） |
+
+> **两个安装包都是「在线同步版」**：外壳直接打开线上地址，所以账号登录、跨设备同步是原生可用的，
+> 手机 / 电脑 / 网页看到的是同一份进度。代价是首次启动要联网一次，之后 Service Worker 会缓存外壳和用过的词库。
+>
+> 只想要完全不联网：选单文件版，把 `.html` 拷到任何电脑上双击即可，9.8 万词的字典也在里面。
+
+APK 证书 SHA-256 尾部 `…45929af5`，与历史版本一致，**可以直接覆盖安装升级**。
 
 ## 看一眼
 
@@ -142,6 +159,8 @@ https://vocab-drill-12129.app.workbuddy.host/?sharecode=46MZWZWZMD
 手机浏览器打开 →「添加到主屏幕」，之后就是一个独立图标，断网也能用。账号登录后可跨设备同步。
 
 ### 2. 单文件版：拷给任何人
+
+不想自己构建的话，直接下[打包好的 `weidanci-standalone-6.11.4.html`](https://github.com/sunny-beat/vocab-drill/releases/download/v6.11.4/weidanci-standalone-6.11.4.html)。也可以自己生成：
 
 ```bash
 node tools/build_standalone.mjs     # 生成 唯单词.html（20 MB，零外链）
