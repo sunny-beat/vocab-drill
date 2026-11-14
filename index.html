@@ -6,21 +6,62 @@
 <meta name="theme-color" content="#f5f1e8" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#15171a" media="(prefers-color-scheme: dark)">
 <meta name="description" content="纯本地背单词：四选一识别 + 拼写、一义一例、FSRS 记忆调度、错词本，离线可用。">
-<title>单词速刷 · Vocab Drill</title>
+<title>唯单词 · Vocab Drill</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icons/apple-touch-180.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="单词速刷">
+<meta name="apple-mobile-web-app-title" content="唯单词">
 <link rel="icon" href="icons/icon.svg">
 <link rel="stylesheet" href="css/style.css">
+<script>
+/* 起步兜底：脚本没跑通时至少能看见原因，而不是一片白。
+   这段必须留在 app.js 之前，且不依赖任何外部文件。 */
+window.__VD_ERR = [];
+window.addEventListener('error', function (e) {
+  var m = e && (e.message || (e.target && e.target.tagName ? '资源加载失败：' + e.target.src : e.type));
+  window.__VD_ERR.push(String(m || '未知错误'));
+}, true);
+window.addEventListener('unhandledrejection', function (e) {
+  var r = e && e.reason;
+  window.__VD_ERR.push('Promise 未处理：' + String((r && (r.message || r)) || '未知'));
+});
+window.__VD_SHOW_FATAL = function (title, detail) {
+  var f = document.getElementById('fatal');
+  if (!f) return;
+  var extra = window.__VD_ERR.length ? window.__VD_ERR.slice(0, 4).join('<br>') : '';
+  f.innerHTML = '<div class="fatal-box">' +
+    '<h2>' + title + '</h2>' +
+    (detail ? '<p class="fatal-d">' + detail + '</p>' : '') +
+    (extra ? '<pre class="fatal-pre">' + extra + '</pre>' : '') +
+    '<p class="fatal-d">可以试试：① 直接双击 <b>唯单词.html</b>（不要只拷 index.html）；' +
+    '② 换成 Edge 或 Chrome 打开；③ 路径别有特殊符号；④ 点下面重试。</p>' +
+    '<button class="big primary" onclick="location.reload()">重新加载</button>' +
+    '</div>';
+  f.classList.remove('hidden');
+};
+/* 15 秒还没启动完，说明卡在解析或脚本报错了 */
+setTimeout(function () {
+  if (window.VD_BOOT_OK) return;
+  var f = document.getElementById('fatal');
+  if (!f || !f.classList.contains('hidden')) return;
+  window.__VD_SHOW_FATAL('页面没能启动',
+    '脚本没有跑完（可能是浏览器太旧、文件被拦或本机很忙）。');
+}, 15000);
+</script>
 </head>
 <body>
+<noscript>
+  <div class="fatal"><div class="fatal-box">
+    <h2>需要开启 JavaScript</h2>
+    <p class="fatal-d">这个背单词页面完全在浏览器本地运行，必须允许 JavaScript 才能用。</p>
+  </div></div>
+</noscript>
 <header id="topbar">
   <div class="tb-group tb-left">
     <span class="brand">
-      <span class="brand-mark">⚡</span>
-      <span class="brand-name">单词速刷</span>
+      <span class="brand-mark" aria-hidden="true"></span>
+      <span class="brand-name">唯单词</span>
     </span>
     <select id="book" title="切换词书"></select>
   </div>
@@ -28,14 +69,18 @@
     <div id="modeseg" class="modeseg" role="group" aria-label="学习模式">
       <button data-mode="recog" title="识别：看单词，从四个释义里选一个（快捷键 M 切换）">识别</button>
       <button data-mode="spell" title="拼写：看释义，把单词拼出来">拼写</button>
+      <button data-mode="ctx" title="语境：给一句挖空的例句，把词填回去（练「在句子里用」）">语境</button>
+      <button data-mode="listen" class="hidden" title="听写：只听读音写单词（在「设置 → 听写模式」里打开）">听写</button>
     </div>
     <span id="today" class="pill" title="今日目标"></span>
     <span id="streak" class="pill fire" title="连续打卡天数">🔥 0</span>
+    <button id="btn-side" class="icon" title="进度与每日参数">📈</button>
     <button id="btn-stats" class="icon" title="统计与生词本">📊</button>
     <button id="btn-settings" class="icon" title="设置">⚙️</button>
   </div>
 </header>
 
+<div class="shell">
 <main>
   <!-- 学习页 -->
   <section id="page-study" class="page">
@@ -46,7 +91,14 @@
     <div id="study-main" class="hidden">
       <div id="study-sub">
         <span id="study-sub-text"></span>
-        <button id="sub-chapters" class="chip" title="选择章节">章节</button>
+        <div class="study-sub-actions">
+          <div class="modeseg" id="study-switch" role="group" aria-label="切换学习任务">
+            <button data-lane="new">学新词</button>
+            <button data-lane="review">复习</button>
+          </div>
+          <button id="sub-today" class="chip" title="返回今日任务">今日</button>
+          <button id="sub-chapters" class="chip" title="选择章节">章节</button>
+        </div>
       </div>
       <div id="pbar"><div id="pbar-in"></div></div>
       <section id="card" class="card">
@@ -62,7 +114,7 @@
 
   <!-- 查词页 -->
   <section id="page-dict" class="page hidden">
-    <input id="dict-search" placeholder="查单词：输入英文（支持部分匹配）">
+    <input id="dict-search" type="search" aria-label="查单词" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="输入英文单词或片段">
     <div id="dict-results" class="rowlist"></div>
   </section>
 
@@ -76,23 +128,45 @@
       <button data-t="star">收藏</button>
       <button data-t="star2">重点</button>
     </div>
-    <div id="list-head" class="hidden"><button id="redrill" class="big primary">重刷错词</button></div>
-    <input id="list-filter" placeholder="在当前分组中筛选…">
+    <div id="list-head">
+      <div class="lbar">
+        <button id="sel-toggle" class="big">☑ 多选</button>
+        <button id="sel-all" class="linkhint hidden">全选</button>
+        <span id="sel-count" class="muted"></span>
+        <span class="lbar-sp"></span>
+        <button id="wrong-listen" class="big hidden">听写错词</button>
+        <button id="redrill" class="big primary hidden">重刷错词</button>
+      </div>
+      <div id="sel-acts" class="hidden">
+        <button data-act="drill" class="primary">▶ 练选中的词</button>
+        <button data-act="master" data-d="0">✅ 已掌握（不再复习）</button>
+        <button data-act="resume">↩ 恢复复习</button>
+        <button data-act="unstar">取消收藏</button>
+        <button data-act="del" class="danger">🗑 删除</button>
+      </div>
+    </div>
+    <input id="list-filter" type="search" aria-label="筛选当前分组" autocomplete="off" placeholder="在当前分组中筛选…">
     <div id="list-results" class="rowlist"></div>
   </section>
 </main>
+
+<!-- 右侧进度边栏：宽屏常驻，窄屏点顶栏 📈 抽屉展开 -->
+<aside id="side" class="side" aria-label="学习进度与每日参数"></aside>
+</div>
+<div id="side-scrim"></div>
+<button id="side-tab" class="side-tab" title="展开进度边栏"><span class="chev">‹</span><span>进度</span></button>
 
 <footer class="hints" id="hints">
   <span><kbd>1–4</kbd> 选释义</span>
   <span><kbd>回车</kbd> 认识</span>
   <span><kbd>Esc</kbd> 不认识</span>
-  <span><kbd>空格</kbd> 下一张</span>
+  <span><kbd>空格</kbd> 显示选项 / 下一张</span>
   <span><kbd>Ctrl+Z</kbd> 上一个</span>
   <span><kbd>M</kbd> 切换模式</span>
   <button id="btn-keys" class="linkhint" title="全部快捷键（?）">全部 ?</button>
 </footer>
 
-<nav id="nav">
+<nav id="nav" aria-label="主导航">
   <button data-page="study" class="active">
     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H11v16H5.5A1.5 1.5 0 0 1 4 18.5z"/><path d="M20 5.5A1.5 1.5 0 0 0 18.5 4H13v16h5.5A1.5 1.5 0 0 0 20 18.5z"/></svg>
     <span>学习</span>
@@ -112,13 +186,17 @@
 </nav>
 
 <div id="modal" class="modal hidden">
-  <div class="modal-box">
+  <div class="modal-box" role="dialog" aria-modal="true" aria-label="详情与设置">
     <button id="modal-x" class="icon modal-x" title="关闭 (Esc)">✕</button>
     <div id="modal-body"></div>
   </div>
 </div>
-<div id="toast" class="hidden"></div>
+<div id="toast" class="hidden" role="status"></div>
+<div id="fatal" class="fatal hidden"></div>
 
+<!-- 词根词缀表（小，直接同步加载；拆分算法随时可能用到它） -->
+<script src="data/stems.js"></script>
+<script src="data/roots.js"></script>
 <!-- FSRS 记忆算法（ts-fsrs 5.4.2 / FSRS-6）。必须是经典脚本：file:// 下 ES module 被 CORS 拦 -->
 <script src="js/vendor/fsrs.global.js"></script>
 <script src="js/app.js"></script>

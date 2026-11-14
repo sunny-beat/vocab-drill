@@ -1,7 +1,7 @@
 {
-  "name": "单词速刷 · Vocab Drill",
-  "short_name": "单词速刷",
-  "description": "纯本地键盘流背单词：四选一识别（可自评认识/不认识）、拼写带听音、一义一例、FSRS 记忆调度、错词本，离线可用。",
+  "name": "唯单词 · Vocab Drill",
+  "short_name": "唯单词",
+  "description": "纯本地键盘流背单词：每日自选新词量、复习只练错词或全部到期、先教学后测验、答对后手动加入复习、四选一与拼写、一义一例、FSRS 记忆调度，离线可用。",
   "lang": "zh-CN",
   "start_url": "./",
   "scope": "./",
@@ -14,6 +14,6 @@
     { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
     { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
     { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ]
 }

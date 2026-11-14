@@ -1,0 +1,97 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 340" width="1280" height="340" role="img" aria-label="唯单词 Vocab Drill">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0d3a2a"/>
+      <stop offset=".55" stop-color="#14543d"/>
+      <stop offset="1" stop-color="#1a6d4f"/>
+    </linearGradient>
+    <radialGradient id="glowA" cx=".12" cy=".1" r=".8">
+      <stop offset="0" stop-color="#8dffcb" stop-opacity=".28"/>
+      <stop offset="1" stop-color="#8dffcb" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glowB" cx=".9" cy="1" r=".7">
+      <stop offset="0" stop-color="#43c08a" stop-opacity=".22"/>
+      <stop offset="1" stop-color="#43c08a" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="card" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity=".14"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity=".05"/>
+    </linearGradient>
+    <linearGradient id="paper" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fffdf7"/>
+      <stop offset="1" stop-color="#e9e0c8"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1280" height="340" rx="26" fill="url(#bg)"/>
+  <rect width="1280" height="340" rx="26" fill="url(#glowA)"/>
+  <rect width="1280" height="340" rx="26" fill="url(#glowB)"/>
+
+  <!-- 背景细网格，暗示「词表」 -->
+  <g stroke="#ffffff" stroke-opacity=".05" stroke-width="1">
+    <path d="M0 60h1280M0 120h1280M0 180h1280M0 240h1280M0 300h1280"/>
+    <path d="M120 0v340M240 0v340M360 0v340M480 0v340M600 0v340M720 0v340M840 0v340M960 0v340M1080 0v340M1200 0v340"/>
+  </g>
+
+  <!-- 书：与 App 图标同一套画法 -->
+  <g transform="translate(64 76) scale(0.39)">
+    <rect x="-30" y="-30" width="572" height="572" rx="128" fill="#0b3325" opacity=".55"/>
+    <path d="M256 336 C 210 310 152 300 92 304 L92 410 C 152 406 210 416 256 438 Z" fill="#c9b998"/>
+    <path d="M256 336 C 302 310 360 300 420 304 L420 410 C 360 406 302 416 256 438 Z" fill="#d8c9a9"/>
+    <path d="M256 318 C 210 292 152 282 92 286 L92 392 C 152 388 210 398 256 420 Z" fill="url(#paper)"/>
+    <path d="M256 318 C 302 292 360 282 420 286 L420 392 C 360 388 302 398 256 420 Z" fill="#fffdf7"/>
+    <g stroke="#ddd0b4" stroke-width="4" stroke-linecap="round" fill="none" opacity=".85">
+      <path d="M118 320 C 160 317 200 324 234 338"/>
+      <path d="M118 348 C 160 345 200 352 234 366"/>
+      <path d="M278 338 C 312 324 352 317 394 320"/>
+      <path d="M278 366 C 312 352 352 345 394 348"/>
+    </g>
+    <path d="M256 318 L256 420" stroke="#cbbda1" stroke-width="9" stroke-linecap="round"/>
+    <path d="M318 292 L318 372 L333 356 L348 372 L348 292 Z" fill="#43c08a"/>
+  </g>
+
+  <!-- 标题 -->
+  <g font-family="Segoe UI, PingFang SC, Microsoft YaHei, sans-serif">
+    <text x="292" y="150" font-size="58" font-weight="700" fill="#ffffff" letter-spacing="2">唯单词</text>
+    <text x="294" y="188" font-size="17" font-weight="600" fill="#8dffcb" letter-spacing="7">VOCAB DRILL</text>
+    <text x="294" y="234" font-size="17" fill="#c8e8d8" letter-spacing=".5">键盘流背单词 · 一义一例 · 真题例句 · 间隔重复</text>
+    <g>
+      <rect x="294" y="252" width="150" height="34" rx="17" fill="#ffffff" fill-opacity=".08" stroke="#8dffcb" stroke-opacity=".28"/>
+      <text x="369" y="274" font-size="13" fill="#d8f7e8" text-anchor="middle">CET-6 · 4,770</text>
+      <rect x="456" y="252" width="150" height="34" rx="17" fill="#ffffff" fill-opacity=".08" stroke="#8dffcb" stroke-opacity=".28"/>
+      <text x="531" y="274" font-size="13" fill="#d8f7e8" text-anchor="middle">考研 · 5,091</text>
+      <rect x="618" y="252" width="162" height="34" rx="17" fill="#ffffff" fill-opacity=".08" stroke="#8dffcb" stroke-opacity=".28"/>
+      <text x="699" y="274" font-size="13" fill="#d8f7e8" text-anchor="middle">查词 · 98,159</text>
+    </g>
+  </g>
+
+  <!-- 右：浮起的词卡 -->
+  <g font-family="Segoe UI, PingFang SC, Microsoft YaHei, sans-serif">
+    <g transform="rotate(-3 1010 100)">
+      <rect x="906" y="72" width="248" height="66" rx="16" fill="url(#card)" stroke="#ffffff" stroke-opacity=".16"/>
+      <text x="928" y="102" font-size="22" font-weight="700" fill="#f2fff9">deceive</text>
+      <text x="928" y="124" font-size="13" fill="#9fd8bd">v. 欺骗，蒙蔽</text>
+      <circle cx="1130" cy="94" r="5" fill="#8dffcb" opacity=".9"/>
+    </g>
+    <g transform="rotate(2 1010 186)">
+      <rect x="906" y="158" width="248" height="66" rx="16" fill="url(#card)" stroke="#ffffff" stroke-opacity=".16"/>
+      <text x="928" y="188" font-size="22" font-weight="700" fill="#f2fff9">paradox</text>
+      <text x="928" y="210" font-size="13" fill="#9fd8bd">n. 悖论；自相矛盾</text>
+      <circle cx="1130" cy="180" r="5" fill="#8dffcb" opacity=".7"/>
+    </g>
+    <g transform="rotate(-2 1010 272)">
+      <rect x="906" y="244" width="248" height="66" rx="16" fill="url(#card)" stroke="#ffffff" stroke-opacity=".16"/>
+      <text x="928" y="274" font-size="22" font-weight="700" fill="#f2fff9">comply</text>
+      <text x="928" y="296" font-size="13" fill="#9fd8bd">v. 遵从，顺从</text>
+      <circle cx="1130" cy="266" r="5" fill="#8dffcb" opacity=".5"/>
+    </g>
+  </g>
+
+  <!-- 光点 -->
+  <g fill="#8dffcb">
+    <circle cx="640" cy="44" r="4" opacity=".7"/>
+    <circle cx="880" cy="300" r="3.5" opacity=".5"/>
+    <circle cx="1200" cy="52" r="3" opacity=".45"/>
+    <circle cx="60" cy="300" r="3.5" opacity=".4"/>
+  </g>
+</svg>

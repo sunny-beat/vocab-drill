@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1a6d4f"/>
+      <stop offset=".55" stop-color="#14543d"/>
+      <stop offset="1" stop-color="#0d3a2a"/>
+    </linearGradient>
+    <linearGradient id="glow" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity=".12"/>
+      <stop offset=".45" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="0" fill="url(#bg)"/>
+  <rect width="512" height="512" rx="0" fill="url(#glow)"/>
+  <g transform="translate(256 256) scale(0.8) translate(-256 -256)">
+
+  <g>
+    <!-- 书脊底部的厚度（先画，压在页下面） -->
+    <path d="M256 336 C 210 310 152 300 92 304 L92 410 C 152 406 210 416 256 438 Z" fill="#c9b998"/>
+    <path d="M256 336 C 302 310 360 300 420 304 L420 410 C 360 406 302 416 256 438 Z" fill="#d8c9a9"/>
+
+    <!-- 左右页 -->
+    <path d="M256 318 C 210 292 152 282 92 286 L92 392 C 152 388 210 398 256 420 Z"
+          fill="#fdf8ec"/>
+    <path d="M256 318 C 302 292 360 282 420 286 L420 392 C 360 388 302 398 256 420 Z"
+          fill="#fffdf7"/>
+
+    <!-- 页面上淡淡的横线 -->
+    <g stroke="#ddd0b4" stroke-width="4" stroke-linecap="round" fill="none" opacity=".85">
+      <path d="M118 320 C 160 317 200 324 234 338"/>
+      <path d="M118 348 C 160 345 200 352 234 366"/>
+      <path d="M118 376 C 160 373 200 380 234 394"/>
+      <path d="M278 338 C 312 324 352 317 394 320"/>
+      <path d="M278 366 C 312 352 352 345 394 348"/>
+      <path d="M278 394 C 312 380 352 373 394 376"/>
+    </g>
+
+    <!-- 书脊 -->
+    <path d="M256 318 L256 420" stroke="#cbbda1" stroke-width="9" stroke-linecap="round"/>
+    <path d="M256 322 L256 416" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" opacity=".55"/>
+
+    <!-- 薄荷色书签带 -->
+    <path d="M318 292 L318 372 L333 356 L348 372 L348 292 Z" fill="#43c08a"/>
+    <path d="M318 292 L318 372 L333 356 L333 292 Z" fill="#31a874" opacity=".55"/>
+  </g>
+
+  <!-- 书页上浮起的单词 -->
+  <g font-family="Segoe UI, Arial, Helvetica, sans-serif" font-weight="700">
+    <text x="112" y="252" font-size="46" fill="#f2fff9" opacity=".97"
+          transform="rotate(-7 112 252)" letter-spacing="-1">vocab</text>
+    <text x="300" y="196" font-size="31" fill="#a8f2cd" opacity=".95"
+          transform="rotate(8 300 196)" letter-spacing="-.5">learn</text>
+    <text x="214" y="146" font-size="24" fill="#7fe3b4" opacity=".88"
+          transform="rotate(-4 214 146)" letter-spacing="1">focus</text>
+  </g>
+
+  <!-- 浮起来的小光点，暗示"飘" -->
+  <g fill="#8dffcb">
+    <circle cx="268" cy="112" r="5.5" opacity=".85"/>
+    <circle cx="352" cy="142" r="4" opacity=".7"/>
+    <circle cx="96"  cy="214" r="4.5" opacity=".6"/>
+    <circle cx="408" cy="238" r="5" opacity=".55"/>
+    <circle cx="176" cy="176" r="3.5" opacity=".5"/>
+    <circle cx="440" cy="176" r="3" opacity=".4"/>
+  </g>
+  </g>
+</svg>

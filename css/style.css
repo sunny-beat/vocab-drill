@@ -17,6 +17,20 @@
   --bad-weak: #f8e9e5;
   --border: #e4ddcd;
   --shadow: 0 1px 3px rgba(60, 50, 30, .06), 0 8px 24px rgba(60, 50, 30, .05);
+  /* 进度之书：墨绿布面精装 + 米色纸口 + 奶油缎带 */
+  --bk-c1: #35866a;
+  --bk-c2: #17513c;
+  --bk-spine: #0e3222;
+  --bk-glow1: #a8e6c6;
+  --bk-glow2: rgba(168, 230, 198, .18);
+  --bk-page: #f1ead9;
+  --bk-page2: #d9cfba;
+  --bk-leaf: #c3b69c;
+  --bk-band: rgba(255, 255, 255, .16);
+  --bk-rim-line: rgba(255, 255, 255, .18);
+  --bk-ink: #ffffff;
+  --bk-ink2: rgba(255, 255, 255, .72);
+  --bk-ribbon: #efe2c4;
 }
 :root[data-theme="dark"] {
   --bg: #15171a;
@@ -33,6 +47,20 @@
   --bad-weak: #392824;
   --border: #2b2f33;
   --shadow: 0 1px 3px rgba(0, 0, 0, .4), 0 8px 24px rgba(0, 0, 0, .28);
+  /* 夜读版：同一本书，布面提亮一点、纸口压暗，别在暗背景上扎眼 */
+  --bk-c1: #3d8d72;
+  --bk-c2: #1b4c39;
+  --bk-spine: #0f3325;
+  --bk-glow1: #9fe0bd;
+  --bk-glow2: rgba(159, 224, 189, .14);
+  --bk-page: #8b8578;
+  --bk-page2: #66604f;
+  --bk-leaf: #514a3f;
+  --bk-band: rgba(255, 255, 255, .13);
+  --bk-rim-line: rgba(255, 255, 255, .14);
+  --bk-ink: #f3f7f4;
+  --bk-ink2: rgba(243, 247, 244, .68);
+  --bk-ribbon: #cdbb98;
 }
 @media (prefers-color-scheme: dark) {
   :root[data-theme="auto"] {
@@ -50,6 +78,19 @@
     --bad-weak: #392824;
     --border: #2b2f33;
     --shadow: 0 1px 3px rgba(0, 0, 0, .4), 0 8px 24px rgba(0, 0, 0, .28);
+    --bk-c1: #3d8d72;
+    --bk-c2: #1b4c39;
+    --bk-spine: #0f3325;
+    --bk-glow1: #9fe0bd;
+    --bk-glow2: rgba(159, 224, 189, .14);
+    --bk-page: #8b8578;
+    --bk-page2: #66604f;
+    --bk-leaf: #514a3f;
+    --bk-band: rgba(255, 255, 255, .13);
+    --bk-rim-line: rgba(255, 255, 255, .14);
+    --bk-ink: #f3f7f4;
+    --bk-ink2: rgba(243, 247, 244, .68);
+    --bk-ribbon: #cdbb98;
   }
 }
 
@@ -87,11 +128,13 @@ body {
 .brand { display: flex; align-items: center; gap: 7px; white-space: nowrap; }
 .brand-mark {
   width: 24px; height: 24px; border-radius: 7px;
-  background: linear-gradient(135deg, #4fa377, #2f7355);
-  color: #fff; font-size: 13px; line-height: 24px; text-align: center;
+  background: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIiB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiI+ICAgPGRlZnM+ICAgICA8bGluZWFyR3JhZGllbnQgaWQ9ImJnIiB4MT0iMCIgeTE9IjAiIHgyPSIxIiB5Mj0iMSI+ICAgICAgIDxzdG9wIG9mZnNldD0iMCIgc3RvcC1jb2xvcj0iIzFhNmQ0ZiIvPiAgICAgICA8c3RvcCBvZmZzZXQ9Ii41NSIgc3RvcC1jb2xvcj0iIzE0NTQzZCIvPiAgICAgICA8c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiMwZDNhMmEiLz4gICAgIDwvbGluZWFyR3JhZGllbnQ+ICAgICA8bGluZWFyR3JhZGllbnQgaWQ9Imdsb3ciIHgxPSIwIiB5MT0iMCIgeDI9IjAiIHkyPSIxIj4gICAgICAgPHN0b3Agb2Zmc2V0PSIwIiBzdG9wLWNvbG9yPSIjZmZmZmZmIiBzdG9wLW9wYWNpdHk9Ii4xMiIvPiAgICAgICA8c3RvcCBvZmZzZXQ9Ii40NSIgc3RvcC1jb2xvcj0iI2ZmZmZmZiIgc3RvcC1vcGFjaXR5PSIwIi8+ICAgICA8L2xpbmVhckdyYWRpZW50PiAgIDwvZGVmcz4gICA8cmVjdCB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgcng9IjExNiIgZmlsbD0idXJsKCNiZykiLz4gICA8cmVjdCB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgcng9IjExNiIgZmlsbD0idXJsKCNnbG93KSIvPiAgICA8Zz4gICAgIDwhLS0g5Lmm6ISK5bqV6YOo55qE5Y6a5bqm77yI5YWI55S777yM5Y6L5Zyo6aG15LiL6Z2i77yJIC0tPiAgICAgPHBhdGggZD0iTTI1NiAzMzYgQyAyMTAgMzEwIDE1MiAzMDAgOTIgMzA0IEw5MiA0MTAgQyAxNTIgNDA2IDIxMCA0MTYgMjU2IDQzOCBaIiBmaWxsPSIjYzliOTk4Ii8+ICAgICA8cGF0aCBkPSJNMjU2IDMzNiBDIDMwMiAzMTAgMzYwIDMwMCA0MjAgMzA0IEw0MjAgNDEwIEMgMzYwIDQwNiAzMDIgNDE2IDI1NiA0MzggWiIgZmlsbD0iI2Q4YzlhOSIvPiAgICAgIDwhLS0g5bem5Y+z6aG1IC0tPiAgICAgPHBhdGggZD0iTTI1NiAzMTggQyAyMTAgMjkyIDE1MiAyODIgOTIgMjg2IEw5MiAzOTIgQyAxNTIgMzg4IDIxMCAzOTggMjU2IDQyMCBaIiAgICAgICAgICAgZmlsbD0iI2ZkZjhlYyIvPiAgICAgPHBhdGggZD0iTTI1NiAzMTggQyAzMDIgMjkyIDM2MCAyODIgNDIwIDI4NiBMNDIwIDM5MiBDIDM2MCAzODggMzAyIDM5OCAyNTYgNDIwIFoiICAgICAgICAgICBmaWxsPSIjZmZmZGY3Ii8+ICAgICAgPCEtLSDpobXpnaLkuIrmt6Hmt6HnmoTmqKrnur8gLS0+ICAgICA8ZyBzdHJva2U9IiNkZGQwYjQiIHN0cm9rZS13aWR0aD0iNCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBmaWxsPSJub25lIiBvcGFjaXR5PSIuODUiPiAgICAgICA8cGF0aCBkPSJNMTE4IDMyMCBDIDE2MCAzMTcgMjAwIDMyNCAyMzQgMzM4Ii8+ICAgICAgIDxwYXRoIGQ9Ik0xMTggMzQ4IEMgMTYwIDM0NSAyMDAgMzUyIDIzNCAzNjYiLz4gICAgICAgPHBhdGggZD0iTTExOCAzNzYgQyAxNjAgMzczIDIwMCAzODAgMjM0IDM5NCIvPiAgICAgICA8cGF0aCBkPSJNMjc4IDMzOCBDIDMxMiAzMjQgMzUyIDMxNyAzOTQgMzIwIi8+ICAgICAgIDxwYXRoIGQ9Ik0yNzggMzY2IEMgMzEyIDM1MiAzNTIgMzQ1IDM5NCAzNDgiLz4gICAgICAgPHBhdGggZD0iTTI3OCAzOTQgQyAzMTIgMzgwIDM1MiAzNzMgMzk0IDM3NiIvPiAgICAgPC9nPiAgICAgIDwhLS0g5Lmm6ISKIC0tPiAgICAgPHBhdGggZD0iTTI1NiAzMTggTDI1NiA0MjAiIHN0cm9rZT0iI2NiYmRhMSIgc3Ryb2tlLXdpZHRoPSI5IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz4gICAgIDxwYXRoIGQ9Ik0yNTYgMzIyIEwyNTYgNDE2IiBzdHJva2U9IiNmZmZmZmYiIHN0cm9rZS13aWR0aD0iMi41IiBzdHJva2UtbGluZWNhcD0icm91bmQiIG9wYWNpdHk9Ii41NSIvPiAgICAgIDwhLS0g6JaE6I236Imy5Lmm562+5bimIC0tPiAgICAgPHBhdGggZD0iTTMxOCAyOTIgTDMxOCAzNzIgTDMzMyAzNTYgTDM0OCAzNzIgTDM0OCAyOTIgWiIgZmlsbD0iIzQzYzA4YSIvPiAgICAgPHBhdGggZD0iTTMxOCAyOTIgTDMxOCAzNzIgTDMzMyAzNTYgTDMzMyAyOTIgWiIgZmlsbD0iIzMxYTg3NCIgb3BhY2l0eT0iLjU1Ii8+ICAgPC9nPiAgICA8IS0tIOS5pumhteS4iua1rui1t+eahOWNleivjSAtLT4gICA8ZyBmb250LWZhbWlseT0iU2Vnb2UgVUksIEFyaWFsLCBIZWx2ZXRpY2EsIHNhbnMtc2VyaWYiIGZvbnQtd2VpZ2h0PSI3MDAiPiAgICAgPHRleHQgeD0iMTEyIiB5PSIyNTIiIGZvbnQtc2l6ZT0iNDYiIGZpbGw9IiNmMmZmZjkiIG9wYWNpdHk9Ii45NyIgICAgICAgICAgIHRyYW5zZm9ybT0icm90YXRlKC03IDExMiAyNTIpIiBsZXR0ZXItc3BhY2luZz0iLTEiPnZvY2FiPC90ZXh0PiAgICAgPHRleHQgeD0iMzAwIiB5PSIxOTYiIGZvbnQtc2l6ZT0iMzEiIGZpbGw9IiNhOGYyY2QiIG9wYWNpdHk9Ii45NSIgICAgICAgICAgIHRyYW5zZm9ybT0icm90YXRlKDggMzAwIDE5NikiIGxldHRlci1zcGFjaW5nPSItLjUiPmxlYXJuPC90ZXh0PiAgICAgPHRleHQgeD0iMjE0IiB5PSIxNDYiIGZvbnQtc2l6ZT0iMjQiIGZpbGw9IiM3ZmUzYjQiIG9wYWNpdHk9Ii44OCIgICAgICAgICAgIHRyYW5zZm9ybT0icm90YXRlKC00IDIxNCAxNDYpIiBsZXR0ZXItc3BhY2luZz0iMSI+Zm9jdXM8L3RleHQ+ICAgPC9nPiAgICA8IS0tIOa1rui1t+adpeeahOWwj+WFieeCue+8jOaal+ekuiLpo5giIC0tPiAgIDxnIGZpbGw9IiM4ZGZmY2IiPiAgICAgPGNpcmNsZSBjeD0iMjY4IiBjeT0iMTEyIiByPSI1LjUiIG9wYWNpdHk9Ii44NSIvPiAgICAgPGNpcmNsZSBjeD0iMzUyIiBjeT0iMTQyIiByPSI0IiBvcGFjaXR5PSIuNyIvPiAgICAgPGNpcmNsZSBjeD0iOTYiICBjeT0iMjE0IiByPSI0LjUiIG9wYWNpdHk9Ii42Ii8+ICAgICA8Y2lyY2xlIGN4PSI0MDgiIGN5PSIyMzgiIHI9IjUiIG9wYWNpdHk9Ii41NSIvPiAgICAgPGNpcmNsZSBjeD0iMTc2IiBjeT0iMTc2IiByPSIzLjUiIG9wYWNpdHk9Ii41Ii8+ICAgICA8Y2lyY2xlIGN4PSI0NDAiIGN5PSIxNzYiIHI9IjMiIG9wYWNpdHk9Ii40Ii8+ICAgPC9nPiA8L3N2Zz4=") center/cover no-repeat;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIiB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiI+ICAgPGRlZnM+ICAgICA8bGluZWFyR3JhZGllbnQgaWQ9ImJnIiB4MT0iMCIgeTE9IjAiIHgyPSIxIiB5Mj0iMSI+ICAgICAgIDxzdG9wIG9mZnNldD0iMCIgc3RvcC1jb2xvcj0iIzFhNmQ0ZiIvPiAgICAgICA8c3RvcCBvZmZzZXQ9Ii41NSIgc3RvcC1jb2xvcj0iIzE0NTQzZCIvPiAgICAgICA8c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiMwZDNhMmEiLz4gICAgIDwvbGluZWFyR3JhZGllbnQ+ICAgICA8bGluZWFyR3JhZGllbnQgaWQ9Imdsb3ciIHgxPSIwIiB5MT0iMCIgeDI9IjAiIHkyPSIxIj4gICAgICAgPHN0b3Agb2Zmc2V0PSIwIiBzdG9wLWNvbG9yPSIjZmZmZmZmIiBzdG9wLW9wYWNpdHk9Ii4xMiIvPiAgICAgICA8c3RvcCBvZmZzZXQ9Ii40NSIgc3RvcC1jb2xvcj0iI2ZmZmZmZiIgc3RvcC1vcGFjaXR5PSIwIi8+ICAgICA8L2xpbmVhckdyYWRpZW50PiAgIDwvZGVmcz4gICA8cmVjdCB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgcng9IjAiIGZpbGw9InVybCgjYmcpIi8+ICAgPHJlY3Qgd2lkdGg9IjUxMiIgaGVpZ2h0PSI1MTIiIHJ4PSIwIiBmaWxsPSJ1cmwoI2dsb3cpIi8+ICAgPGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMjU2IDI1Nikgc2NhbGUoMC44KSB0cmFuc2xhdGUoLTI1NiAtMjU2KSI+ICAgIDxnPiAgICAgPCEtLSDkuabohIrlupXpg6jnmoTljprluqbvvIjlhYjnlLvvvIzljovlnKjpobXkuIvpnaLvvIkgLS0+ICAgICA8cGF0aCBkPSJNMjU2IDMzNiBDIDIxMCAzMTAgMTUyIDMwMCA5MiAzMDQgTDkyIDQxMCBDIDE1MiA0MDYgMjEwIDQxNiAyNTYgNDM4IFoiIGZpbGw9IiNjOWI5OTgiLz4gICAgIDxwYXRoIGQ9Ik0yNTYgMzM2IEMgMzAyIDMxMCAzNjAgMzAwIDQyMCAzMDQgTDQyMCA0MTAgQyAzNjAgNDA2IDMwMiA0MTYgMjU2IDQzOCBaIiBmaWxsPSIjZDhjOWE5Ii8+ICAgICAgPCEtLSDlt6blj7PpobUgLS0+ICAgICA8cGF0aCBkPSJNMjU2IDMxOCBDIDIxMCAyOTIgMTUyIDI4MiA5MiAyODYgTDkyIDM5MiBDIDE1MiAzODggMjEwIDM5OCAyNTYgNDIwIFoiICAgICAgICAgICBmaWxsPSIjZmRmOGVjIi8+ICAgICA8cGF0aCBkPSJNMjU2IDMxOCBDIDMwMiAyOTIgMzYwIDI4MiA0MjAgMjg2IEw0MjAgMzkyIEMgMzYwIDM4OCAzMDIgMzk4IDI1NiA0MjAgWiIgICAgICAgICAgIGZpbGw9IiNmZmZkZjciLz4gICAgICA8IS0tIOmhtemdouS4iua3oea3oeeahOaoque6vyAtLT4gICAgIDxnIHN0cm9rZT0iI2RkZDBiNCIgc3Ryb2tlLXdpZHRoPSI0IiBzdHJva2UtbGluZWNhcD0icm91bmQiIGZpbGw9Im5vbmUiIG9wYWNpdHk9Ii44NSI+ICAgICAgIDxwYXRoIGQ9Ik0xMTggMzIwIEMgMTYwIDMxNyAyMDAgMzI0IDIzNCAzMzgiLz4gICAgICAgPHBhdGggZD0iTTExOCAzNDggQyAxNjAgMzQ1IDIwMCAzNTIgMjM0IDM2NiIvPiAgICAgICA8cGF0aCBkPSJNMTE4IDM3NiBDIDE2MCAzNzMgMjAwIDM4MCAyMzQgMzk0Ii8+ICAgICAgIDxwYXRoIGQ9Ik0yNzggMzM4IEMgMzEyIDMyNCAzNTIgMzE3IDM5NCAzMjAiLz4gICAgICAgPHBhdGggZD0iTTI3OCAzNjYgQyAzMTIgMzUyIDM1MiAzNDUgMzk0IDM0OCIvPiAgICAgICA8cGF0aCBkPSJNMjc4IDM5NCBDIDMxMiAzODAgMzUyIDM3MyAzOTQgMzc2Ii8+ICAgICA8L2c+ICAgICAgPCEtLSDkuabohIogLS0+ICAgICA8cGF0aCBkPSJNMjU2IDMxOCBMMjU2IDQyMCIgc3Ryb2tlPSIjY2JiZGExIiBzdHJva2Utd2lkdGg9IjkiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPiAgICAgPHBhdGggZD0iTTI1NiAzMjIgTDI1NiA0MTYiIHN0cm9rZT0iI2ZmZmZmZiIgc3Ryb2tlLXdpZHRoPSIyLjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgb3BhY2l0eT0iLjU1Ii8+ICAgICAgPCEtLSDoloTojbfoibLkuabnrb7luKYgLS0+ICAgICA8cGF0aCBkPSJNMzE4IDI5MiBMMzE4IDM3MiBMMzMzIDM1NiBMMzQ4IDM3MiBMMzQ4IDI5MiBaIiBmaWxsPSIjNDNjMDhhIi8+ICAgICA8cGF0aCBkPSJNMzE4IDI5MiBMMzE4IDM3MiBMMzMzIDM1NiBMMzMzIDI5MiBaIiBmaWxsPSIjMzFhODc0IiBvcGFjaXR5PSIuNTUiLz4gICA8L2c+ICAgIDwhLS0g5Lmm6aG15LiK5rWu6LW355qE5Y2V6K+NIC0tPiAgIDxnIGZvbnQtZmFtaWx5PSJTZWdvZSBVSSwgQXJpYWwsIEhlbHZldGljYSwgc2Fucy1zZXJpZiIgZm9udC13ZWlnaHQ9IjcwMCI+ICAgICA8dGV4dCB4PSIxMTIiIHk9IjI1MiIgZm9udC1zaXplPSI0NiIgZmlsbD0iI2YyZmZmOSIgb3BhY2l0eT0iLjk3IiAgICAgICAgICAgdHJhbnNmb3JtPSJyb3RhdGUoLTcgMTEyIDI1MikiIGxldHRlci1zcGFjaW5nPSItMSI+dm9jYWI8L3RleHQ+ICAgICA8dGV4dCB4PSIzMDAiIHk9IjE5NiIgZm9udC1zaXplPSIzMSIgZmlsbD0iI2E4ZjJjZCIgb3BhY2l0eT0iLjk1IiAgICAgICAgICAgdHJhbnNmb3JtPSJyb3RhdGUoOCAzMDAgMTk2KSIgbGV0dGVyLXNwYWNpbmc9Ii0uNSI+bGVhcm48L3RleHQ+ICAgICA8dGV4dCB4PSIyMTQiIHk9IjE0NiIgZm9udC1zaXplPSIyNCIgZmlsbD0iIzdmZTNiNCIgb3BhY2l0eT0iLjg4IiAgICAgICAgICAgdHJhbnNmb3JtPSJyb3RhdGUoLTQgMjE0IDE0NikiIGxldHRlci1zcGFjaW5nPSIxIj5mb2N1czwvdGV4dD4gICA8L2c+ICAgIDwhLS0g5rWu6LW35p2l55qE5bCP5YWJ54K577yM5pqX56S6IumjmCIgLS0+ICAgPGcgZmlsbD0iIzhkZmZjYiI+ICAgICA8Y2lyY2xlIGN4PSIyNjgiIGN5PSIxMTIiIHI9IjUuNSIgb3BhY2l0eT0iLjg1Ii8+ICAgICA8Y2lyY2xlIGN4PSIzNTIiIGN5PSIxNDIiIHI9IjQiIG9wYWNpdHk9Ii43Ii8+ICAgICA8Y2lyY2xlIGN4PSI5NiIgIGN5PSIyMTQiIHI9IjQuNSIgb3BhY2l0eT0iLjYiLz4gICAgIDxjaXJjbGUgY3g9IjQwOCIgY3k9IjIzOCIgcj0iNSIgb3BhY2l0eT0iLjU1Ii8+ICAgICA8Y2lyY2xlIGN4PSIxNzYiIGN5PSIxNzYiIHI9IjMuNSIgb3BhY2l0eT0iLjUiLz4gICAgIDxjaXJjbGUgY3g9IjQ0MCIgY3k9IjE3NiIgcj0iMyIgb3BhY2l0eT0iLjQiLz4gICA8L2c+ICAgPC9nPiA8L3N2Zz4=") center/cover no-repeat;
+  color: #fff; line-height: 0; flex-shrink: 0;
+  display: inline-flex; align-items: center; justify-content: center;
   box-shadow: 0 1px 3px rgba(47, 115, 85, .3);
 }
-.brand-name { font-weight: 700; font-size: 14.5px; letter-spacing: .2px; }
+.brand-mark svg { width: 17px; height: 17px; display: block; }
+.brand-name { font-weight: 700; font-size: 14.5px; letter-spacing: .3px; }
 select {
   font: inherit;
   font-size: 13px;
@@ -196,6 +239,13 @@ main {
   gap: 8px;
   font-size: 13px;
   color: var(--muted);
+}
+.study-sub-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+#study-switch button { padding: 4px 8px; white-space: nowrap; }
+#study-sub .chip { white-space: nowrap; }
+@media (max-width: 560px) {
+  #study-sub-text { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+  #study-sub .chip { padding-inline: 7px; }
 }
 #pbar { height: 5px; border-radius: 999px; background: var(--border); overflow: hidden; }
 #pbar-in { height: 100%; width: 0; background: var(--accent); border-radius: 999px; transition: width .2s; }
@@ -321,15 +371,36 @@ button.ghost { background: transparent; border-color: transparent; color: var(--
 .phinline b { color: var(--fg); margin-right: 8px; font-weight: 600; }
 .sents { display: flex; flex-direction: column; gap: 8px; }
 .sent {
+  position: relative;          /* 例句右上角那枚 🔊 的定位基准 */
   text-align: left;
   border-left: 3px solid var(--accent);
   background: var(--bg);
   border-radius: 8px;
-  padding: 9px 12px;
+  padding: 9px 36px 9px 12px;  /* 右边留出按钮的位置，长句不会钻到按钮底下 */
   line-height: 1.6;
 }
-.sent .en { display: block; font-size: .98rem; }
+/* 英文句子用 inline 而不是 block：出处的「——2015六级 阅读题」才能接在句尾同一行。
+   中文释义仍是 block，所以没有出处的词典例句看起来还是「英文一行 + 中文一行」，没变化。 */
+.sent .en { display: inline; font-size: .98rem; }
 .sent .cn { display: block; color: var(--muted); font-size: .86rem; margin-top: 3px; }
+/* 例句朗读：只做「点一下读整句」，绝不自动播（自动出声在自习室/地铁里是灾难） */
+.sent-speak {
+  position: absolute;
+  top: 6px; right: 5px;
+  width: 25px; height: 25px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; line-height: 1;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--muted);
+  opacity: .55;
+  cursor: pointer;
+  transition: opacity .15s, background .15s, color .15s, border-color .15s;
+}
+.sent-speak:hover { opacity: 1; color: var(--accent); background: var(--card); border-color: var(--border); }
+.sent-speak:active { transform: scale(.9); }
+body.is-speaking .sent-speak { animation: spkpulse .85s ease-in-out infinite; opacity: 1; }
 .spellfb .word { margin-top: 4px; }
 .hint { font-size: 1.3rem; letter-spacing: 6px; color: var(--muted); font-family: Consolas, monospace; }
 
@@ -406,11 +477,22 @@ input.spell.wrong { border-color: var(--bad); }
 
 /* 识别：四选一 */
 .qprompt {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
   font-size: 12px;
-  letter-spacing: 1.4px;
   color: var(--muted);
   margin-top: -2px;
 }
+#recall-toggle {
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--fg);
+  text-decoration: none;
+}
+#recall-toggle[aria-pressed="true"] { background: var(--accent-weak); color: var(--accent); border-color: var(--accent); }
 .qopts {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -454,7 +536,124 @@ input.spell.wrong { border-color: var(--bad); }
 .qopt-ok .qkey { background: var(--ok); color: #fff; }
 .qopt-bad { border-color: var(--bad); background: var(--bad-weak); color: var(--bad); }
 .qopt-bad .qkey { background: var(--bad); color: #fff; }
-.qopt-dim { opacity: .42; }
+.qopt-dim { opacity: .58; }
+/* 答完展开的英文释义：贴在该选项下面，中文与英文左对齐同一条基线 */
+.qopt { flex-wrap: wrap; }
+.qopt .qen {
+  flex: 0 0 100%; box-sizing: border-box; padding-left: 32px;
+  display: block; margin-top: 3px; line-height: 1.45;
+  font-weight: 400; font-size: 12px; color: var(--muted);
+  opacity: 0; animation: qen-in .18s ease-out forwards;
+}
+.qopt .qen b { color: var(--accent); font-weight: 600; margin-right: 6px; }
+.card.answered .qopt .qen { font-size: 11.5px; }
+.qopt .qen i { font-style: normal; }
+.qopt-ok .qen b { color: var(--ok); }
+.qopt-bad .qen b { color: var(--bad); }
+.qopt-dim .qen { opacity: 0; animation: qen-in-dim .18s ease-out forwards; }
+@keyframes qen-in { from { opacity: 0; transform: translateY(-2px); } to { opacity: 1; transform: none; } }
+@keyframes qen-in-dim { from { opacity: 0; transform: translateY(-2px); } to { opacity: .68; transform: none; } }
+
+/* 释义面板：词头 + 词频刻度 / 英文释义 / 搭配 */
+.mhead { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; margin: 0 0 6px; }
+.mword { font-size: 15px; font-weight: 700; letter-spacing: .2px; color: var(--fg); }
+.ranks { display: inline-flex; gap: 5px; flex-wrap: wrap; }
+.rk {
+  font-size: 10px; line-height: 1; padding: 3px 6px; border-radius: 5px;
+  letter-spacing: .3px; white-space: nowrap;
+}
+.rk-co { color: #a9822a; background: rgba(169, 130, 42, .11); letter-spacing: -.5px; }
+.rk-ox { color: var(--accent); background: var(--accent-weak); }
+.rk-fq { color: var(--muted); background: rgba(120, 110, 90, .1); }
+
+.enmean {
+  display: flex; gap: 8px; align-items: flex-start;
+  margin-top: 9px; padding-top: 8px; border-top: 1px dashed var(--border);
+}
+.enlabel {
+  flex-shrink: 0; font-size: 9.5px; letter-spacing: 1px; color: var(--muted);
+  padding-top: 3px; opacity: .8;
+}
+.enbody { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.enline { font-size: 12px; line-height: 1.45; color: var(--muted); }
+
+.phr-box { display: flex; gap: 8px; align-items: flex-start; margin-top: 8px; }
+.phr-box .plabel {
+  flex-shrink: 0; font-size: 9.5px; letter-spacing: 1px; color: var(--muted);
+  padding-top: 4px; opacity: .8;
+}
+.phr-list { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.phr-box.one .phr-list { flex-direction: row; flex-wrap: wrap; gap: 4px 10px; }
+/* 搭配与近义词共用一行：两块的首标签对齐，换行时各起一行也不打架 */
+.meta-row { display: flex; flex-wrap: wrap; align-items: baseline; gap: 3px 22px; margin-top: 7px; }
+.meta-row .phr-box, .meta-row .phinline { margin-top: 0; }
+.meta-row .phinline { background: none; padding: 0; border: 0; font-size: 12px; line-height: 1.5; }
+.meta-row .phinline .plabel { font-size: 10px; padding: 0 3px; margin-right: 6px; }
+.pchip { font-size: 12px; line-height: 1.5; color: var(--muted); white-space: nowrap; }
+.pchip b { color: var(--fg); font-weight: 600; margin-right: 5px; }
+.phrow { font-size: 12.5px; line-height: 1.5; color: var(--muted); }
+/* 字典词的例句块（v6.7）：.sent 本来就有边框和喇叭按钮，这里只管纵向间距 */
+.exlist { display: flex; flex-direction: column; gap: 6px; margin-bottom: 4px; }
+/* 喇叭是绝对定位在右上角的，右边必须留出位置。手机端那几条 `.sent { padding: 6px 10px }`
+   把右内边距压成 10px，词条卡里的例句就会跟喇叭重叠（只影响详情卡，学习卡有自己的规则）。 */
+.richcard .sent { padding-right: 34px; }
+/* 真题例句没有中文行，出处写右下角，别用彩色：它是注脚，不是正文 */
+/* 出处紧跟句子同一行（v6.9.2），不许在词中间断行；释义另起一行在它下面 */
+.sent .ssrc { display: block; margin-top: 4px; font-size: 11.5px; color: var(--muted); }
+.sent a.ssrc, .kyline a.kysrc { color: var(--accent); text-underline-offset: 3px; }
+.target-word { color: var(--accent); background: transparent; font-weight: 700; }
+.sent-translation { margin-top: 3px; }
+.sent-translation > summary { color: var(--muted); font-size: .8rem; cursor: pointer; }
+.ctx-answer { width: 100%; text-align: left; }
+.ctx-answer .sent { padding-right: 34px; line-height: 1.5; }
+.spell-answered #spellrow {
+  position: sticky;
+  bottom: 0;
+  z-index: 1;
+  width: 100%;
+  background: var(--card);
+  padding: 4px 0;
+}
+@media (max-width: 560px) {
+  .spell-answered #spellrow { gap: 6px; }
+  .spell-answered #spellrow button { padding: 7px 10px; font-size: .84rem; min-height: 40px; }
+  .spell-answered #spellrow kbd { display: none; }
+}
+
+/* 学习卡里的一行真题（v6.9.1）：只放一条原文，出处接在句尾同一行，省掉独立一行的高度。
+   真挤不下时 fitFeedback 会整块摘掉（drop 列表里排在 .fcurve 之后）。 */
+.kyline {
+  margin-top: 5px; padding: 4px 8px 4px 7px;
+  border-left: 2px solid var(--accent);
+  border-radius: 0 6px 6px 0;
+  background: var(--accent-weak);
+  font-size: 12px; line-height: 1.42; color: var(--fg);
+}
+.kyline .kylbl {
+  display: inline-block; margin-right: 5px; padding: 0 4px;
+  border-radius: 3px; background: var(--accent); color: #fff;
+  font-size: 10px; letter-spacing: .5px; vertical-align: 1px;
+}
+.kyline .kytxt { -webkit-box-decoration-break: clone; }
+.kyline .kysrc {
+  margin-left: 6px; font-style: normal;
+  font-size: 11px; color: var(--muted);
+}
+/* 学习卡里那句真题的释义：换行，比原文小一号，别抢原文的注意力 */
+.kyline .kyzh {
+  display: block; margin-top: 2px;
+  font-size: 11.5px; line-height: 1.38; color: var(--fg); opacity: .82;
+}
+.kyline .kyzh small { color: var(--muted); font-size: 10px; font-weight: 600; }
+
+
+.phrow b { color: var(--fg); font-weight: 600; margin-right: 7px; }
+:root[data-theme="dark"] .rk-co { color: #d9b264; background: rgba(217, 178, 100, .12); }
+:root[data-theme="dark"] .rk-fq { background: rgba(255, 255, 255, .06); }
+@media (prefers-color-scheme: dark) {
+  :root[data-theme="auto"] .rk-co { color: #d9b264; background: rgba(217, 178, 100, .12); }
+  :root[data-theme="auto"] .rk-fq { background: rgba(255, 255, 255, .06); }
+}
 /* 自评兜底：一眼认识 / 完全不认识，绕过四选一 */
 .selfrow {
   display: flex;
@@ -508,8 +707,28 @@ input.spell.wrong { border-color: var(--bad); }
   border-radius: 999px;
   padding: 2px 9px;
 }
-.qres .qwhen { font-size: 12px; font-weight: 400; color: var(--muted); }
 .qmean { animation: fadein .2s ease-out; }
+/* 作答后：词头缩两号、音标与提示行撤掉，把高度让给释义面板 */
+.card.answered .word { font-size: 1.7rem; }
+.card.answered .phon { display: none; }
+.card.answered .qprompt { display: none; }
+.card.answered .qopts:not(.hidden) { display: flex; flex-wrap: wrap; justify-content: center; }
+.card.answered .qopt-dim { display: none; }
+.card.answered .qopt { flex: 1 1 42%; max-width: 18rem; }
+.card.answered .card-top { gap: 4px; }
+.card.answered .tagline { display: none; }   /* 答完不需要「巩固 · 记忆 95%」这行标签了 */
+/* 例句块收紧：答后一屏要同时装下 中文分条 + 英文释义 + 搭配 + 近义词，
+   每个例句省 8px，两条就够腾出一行字体 */
+.card.answered .sent { padding: 6px 32px 6px 11px; line-height: 1.45; }
+.card.answered .sent .en { font-size: .94rem; }
+.card.answered .sent .cn { margin-top: 1px; font-size: .83rem; }
+.card.answered .dblock + .dblock { margin-top: 6px; }
+/* 近义词在答后改成「一行小字」，不再是一个灰底块 —— 一屏里的每一像素都要让给信息本身 */
+.card.answered .meaning .phinline {
+  background: none; padding: 0; margin-top: 7px;
+  font-size: 12px; line-height: 1.5;
+}
+.card.answered .meaning .phinline .plabel { font-size: 10px; padding: 0 3px; margin-right: 6px; }
 /* 一义一例：每条释义一块，例句缩进挂在下面 */
 .dblock { text-align: left; }
 .dblock + .dblock { margin-top: 2px; }
@@ -673,6 +892,14 @@ input.spell.wrong { border-color: var(--bad); }
 .row .rword { font-weight: 600; display: flex; gap: 6px; align-items: center; flex-shrink: 0; }
 .row .rdef { color: var(--muted); font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-left: auto; }
 .row .wrongmark { font-style: normal; font-size: 11px; color: var(--bad); background: var(--bad-weak); border-radius: 6px; padding: 1px 5px; }
+/* v4.2 列表里的「混N」：点一下直接看那个对手 */
+.row .cfmark {
+  font-style: normal; font-size: 11px;
+  color: var(--bad); background: transparent;
+  border: 1px dashed var(--bad); border-radius: 6px; padding: 0 4px;
+  cursor: pointer; transition: background .15s;
+}
+.row .cfmark:hover { background: var(--bad-weak); }
 .row .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border); flex-shrink: 0; }
 .row.s1 .dot { background: var(--warn); }
 .row.s2 .dot { background: var(--ok); }
@@ -694,6 +921,21 @@ input.spell.wrong { border-color: var(--bad); }
 .richcard h3.rsub, .modal h3.rsub { font-size: .88rem; color: var(--muted); align-self: flex-start; margin: 4px 0 0; }
 .richcard .phr, .modal .phr { width: 100%; }
 .richcard .sents, .modal .sents { width: 100%; }
+#modal-body > .richcard {
+  border: 0;
+  box-shadow: none;
+  padding: 8px 0 0;
+  background: transparent;
+}
+.entry-examples, .entry-extra { width: 100%; text-align: left; }
+.entry-jump { justify-content: center; }
+.entry-phrases { width: 100%; }
+.entry-examples:empty { display: none; }
+.entry-examples .rsub { margin: 0 0 8px; }
+.entry-examples .exlist + .rsub { margin-top: 14px; }
+.entry-extra { border: 1px solid var(--border); border-radius: 10px; padding: 8px 12px; }
+.entry-extra > summary { color: var(--accent); cursor: pointer; font-size: .85rem; font-weight: 600; }
+.entry-extra .s-hint { margin: 6px 0; }
 
 /* ---------- seg tabs ---------- */
 .seg { display: flex; gap: 6px; flex-wrap: wrap; }
@@ -724,11 +966,21 @@ input.spell.wrong { border-color: var(--bad); }
   box-shadow: var(--shadow);
   width: min(680px, 100%);
   max-height: 86vh;
-  overflow: auto;
-  padding: 24px;
+  max-height: 86dvh;
+  overflow: hidden;
   position: relative;
 }
-.modal-x { position: absolute; top: 10px; right: 10px; font-size: 15px; }
+#modal-body {
+  max-height: inherit;
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding: 24px;
+}
+.modal-x { position: absolute; top: 10px; right: 10px; font-size: 15px; z-index: 2; background: var(--card); }
+@media (max-width: 560px) {
+  .modal { padding: 12px; }
+  #modal-body { padding: 22px 16px; }
+}
 .modal h2 { font-size: 1.15rem; margin-bottom: 14px; }
 .modal h3 { font-size: .95rem; margin: 18px 0 8px; color: var(--muted); font-weight: 600; }
 .modal .detail { display: flex; flex-direction: column; gap: 14px; align-items: center; text-align: center; }
@@ -777,15 +1029,20 @@ input.spell.wrong { border-color: var(--bad); }
 .icon.starred { color: #e8a33d; }
 .modal .rowlist { max-height: 52vh; overflow: auto; padding-right: 4px; }
 
+/* 提示条放在顶栏与卡片之间的空隙里：不压释义、不压例句 ——
+   答对/答错的那一刻正是要读内容的时候，绝不能挡在那里。 */
 #toast {
   position: fixed;
-  bottom: 140px; left: 50%;
+  top: 56px; left: 50%;
   transform: translateX(-50%);
+  max-width: calc(100vw - 32px);
+  text-align: center;
   background: var(--fg);
   color: var(--bg);
   padding: 9px 18px;
   border-radius: 10px;
   font-size: 13px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, .18);
   z-index: 99;
 }
 
@@ -797,7 +1054,7 @@ input.spell.wrong { border-color: var(--bad); }
 
 /* ---------- 封面 / 今日任务 ---------- */
 .hero {
-  flex: 1;
+  flex: 0 0 auto;          /* 任务台按内容定高，别把整屏拉满留一堆空白 */
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -817,21 +1074,74 @@ input.spell.wrong { border-color: var(--bad); }
 .hero h1 em { font-style: normal; color: var(--accent); }
 .hero-sub { font-size: 13px; color: var(--muted); margin-top: 6px; }
 
-.ring-wrap { display: flex; align-items: center; gap: 18px; margin-top: 2px; }
-.ring { width: 104px; height: 104px; flex-shrink: 0; transform: rotate(-90deg); }
-.ring circle { fill: none; stroke-width: 9; stroke-linecap: round; }
-.ring .ring-bg { stroke: var(--accent-weak); }
-.ring .ring-fg {
-  stroke: var(--accent);
-  stroke-dasharray: 327;
-  stroke-dashoffset: 327;
-  transition: stroke-dashoffset .6s cubic-bezier(.22, .9, .3, 1);
+/* 今日进度之书：书脊光柱 + 书签尾巴 + 封面数字，三层读同一个进度
+   配色单独走 --bk-* 变量：浅色是一本墨绿布面精装，深色是同款但压暗，
+   这样两套主题共用一套几何，书也始终比周围卡片「重」，一眼是主角。 */
+.hero-top { display: flex; align-items: center; gap: 16px; }
+.hero-copy { flex: 1; min-width: 0; }
+.bookwrap {
+  width: 112px; flex-shrink: 0; position: relative;
+  display: flex; flex-direction: column; align-items: center;
+  cursor: pointer; border-radius: 14px; padding: 2px 0 0;
+  transition: transform .18s ease;
+  -webkit-tap-highlight-color: transparent;
 }
-.ring-txt { display: flex; flex-direction: column; gap: 2px; }
-.ring-txt b { font-size: 26px; line-height: 1; font-weight: 700; }
-.ring-txt span { font-size: 12px; color: var(--muted); }
-.ring-note { font-size: 12.5px; color: var(--muted); line-height: 1.7; margin-left: auto; text-align: right; }
-.ring-note b { color: var(--fg); font-size: 15px; }
+.bookwrap:hover { transform: translateY(-2px); }
+.bookwrap:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.book-img { position: relative; width: 100%; transform: rotate(-1.1deg); }
+.book-svg { width: 100%; height: auto; display: block; overflow: visible; }
+.bk-shadow { fill: #1c2b23; opacity: .2; }
+/* 书根 / 书口 / 叶线：纸的三个层次，靠明度差把「一叠纸」说出来 */
+.bk-edge { fill: var(--bk-page2); }
+.bk-pages { fill: var(--bk-page); }
+.bk-leaf { fill: none; stroke: var(--bk-leaf); stroke-width: .9; stroke-linecap: round; }
+/* 封面：渐变布面 + 斜向柔光 + 内压印细边 */
+.bk-cover { stroke: rgba(0, 0, 0, .18); stroke-width: .8; }
+.bk-sheen { fill: #fff; opacity: .07; }
+.bk-rim { fill: none; stroke: var(--bk-rim-line); stroke-width: .9; }
+.bk-rimlight { stroke: #fff; stroke-width: 1; opacity: .18; stroke-linecap: round; }
+/* 书脊：轨道 + 进度光 + 压印箍 */
+.bk-spine-track { fill: var(--bk-spine); }
+.bk-spine-fill {
+  fill: url(#bk-glow);
+  transition: y .6s cubic-bezier(.22, .9, .3, 1), height .6s cubic-bezier(.22, .9, .3, 1);
+}
+.bk-spine-head {
+  fill: var(--bk-glow1);
+  transition: y .6s cubic-bezier(.22, .9, .3, 1);
+}
+.bk-band { stroke: var(--bk-band); stroke-width: 1.6; fill: none; }
+/* 书签：奶油色缎带，尾巴长度跟着进度长 */
+.bk-mark {
+  fill: var(--bk-ribbon);
+  filter: drop-shadow(0 1px 1.5px rgba(0, 0, 0, .22));
+  transition: d .5s cubic-bezier(.22, .9, .3, 1);
+}
+.bk-s1 { stop-color: var(--bk-c1); }
+.bk-s2 { stop-color: var(--bk-c2); }
+.bk-p1 { stop-color: var(--bk-glow1); }
+.bk-p2 { stop-color: var(--bk-glow2); }
+/* 数字压在封面上：左右/上下的百分比对应封面中心（30..118 × 10..150 于 150×168 画布） */
+.book-num {
+  position: absolute; left: 49.3%; top: 50.4%; transform: translate(-50%, -50%);
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  pointer-events: none; text-align: center;
+}
+.book-num b {
+  font-size: 21px; line-height: 1; font-weight: 700; letter-spacing: -.6px;
+  color: var(--bk-ink); font-variant-numeric: tabular-nums;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, .25);
+}
+.book-num b.wide { font-size: 16px; letter-spacing: -1.1px; }
+.book-num span {
+  font-size: 9.5px; color: var(--bk-ink2); letter-spacing: .3px;
+  font-variant-numeric: tabular-nums;
+}
+.book-cap {
+  font-size: 10px; color: var(--muted); letter-spacing: 1.4px;
+  margin-top: 2px; transition: color .2s;
+}
+.bookwrap:hover .book-cap { color: var(--accent); }
 
 .hero-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
 .hstat {
@@ -849,6 +1159,10 @@ input.spell.wrong { border-color: var(--bad); }
 .hstat.new b { color: var(--accent); }
 
 .hero-actions { display: flex; gap: 10px; align-items: center; }
+.study-lanes { width: 100%; }
+.study-lanes button { flex: 1; padding: 8px; min-height: 39px; }
+.study-lanes button span { margin-left: 4px; font-size: .78rem; opacity: .82; }
+.modeseg button[aria-pressed="true"] { color: var(--accent); background: var(--card); font-weight: 600; }
 .cta {
   flex: 1;
   font: inherit;
@@ -858,15 +1172,74 @@ input.spell.wrong { border-color: var(--bad); }
   border: none;
   border-radius: 14px;
   color: #fff;
-  background: linear-gradient(135deg, #4fa377, #33795a);
+  background: linear-gradient(135deg, #1a6d4f, #0d3a2a);
   cursor: pointer;
-  box-shadow: 0 4px 16px rgba(47, 115, 85, .28);
+  box-shadow: 0 4px 16px rgba(13, 58, 42, .28);
   transition: transform .08s, box-shadow .2s, filter .15s;
 }
 .cta:hover { filter: brightness(1.04); box-shadow: 0 6px 20px rgba(47, 115, 85, .34); }
 .cta:active { transform: scale(.985); }
+.cta:disabled { opacity: .58; box-shadow: none; cursor: default; }
 .hero-actions .big { padding: 14px 16px; }
-.hero-tip { font-size: 11.5px; color: var(--muted); text-align: center; }
+.welcome-panel { padding-top: 6px; }
+.welcome-kicker { color: var(--accent); font-weight: 700; font-size: .8rem; margin-bottom: 6px; }
+.welcome-panel h2 { font-size: clamp(1.35rem, 4vw, 1.9rem); margin-bottom: 8px; }
+.welcome-intro, .welcome-note { color: var(--muted); line-height: 1.55; font-size: .88rem; }
+.welcome-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 14px 0; }
+.welcome-grid article { padding: 10px 12px; background: var(--bg); border: 1px solid var(--border); border-radius: 12px; }
+.welcome-grid h3 { color: var(--fg); margin: 0 0 4px; font-size: .9rem; }
+.welcome-grid p { color: var(--muted); font-size: .8rem; line-height: 1.45; }
+/* 内容要滚两三屏，「开始使用」不能藏在最底下 —— 吸在弹窗底部，随时能点 */
+.welcome-panel .actions {
+  justify-content: flex-end; margin-top: 14px; flex-wrap: wrap; gap: 8px;
+  position: sticky; bottom: 0; z-index: 1;
+  padding: 10px 0 6px; background: var(--card);
+  /* 第二个实心阴影盖住吸底栏下方露出的正文：sticky 把按钮拉到容器底部后，
+     文档流里排在它前面的「还有这些」仍会从下方缝隙透出来。用阴影不额外撑高滚动区域。 */
+  box-shadow: 0 -10px 14px -12px rgba(0, 0, 0, .35), 0 48px 0 0 var(--card);
+}
+/* v6.11.1：导览改成「产品全貌」，只留分组标题 + 六张主卡 + 紧凑的其余能力清单。
+   只加类，不动上面六张主卡的规则 —— card-fit 量的是学习卡，这里再长也只让 modal 自己滚。 */
+.welcome-sec {
+  color: var(--accent); font-size: .78rem; font-weight: 700; letter-spacing: .04em;
+  margin: 16px 0 8px; padding-left: 8px; border-left: 3px solid var(--accent);
+}
+.welcome-more { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2px 16px; }
+.welcome-more > div { font-size: .78rem; line-height: 1.5; padding: 3px 0; }
+.welcome-more strong { color: var(--fg); font-weight: 600; }
+.welcome-more span { color: var(--muted); margin-left: 6px; }
+@media (max-width: 560px) {
+  .welcome-grid { grid-template-columns: 1fr; }
+  .welcome-more { grid-template-columns: 1fr; }
+  .welcome-panel .actions .big { flex: 1 1 auto; }
+}
+@media (max-width: 390px) {
+  .welcome-grid { grid-template-columns: 1fr; }
+}
+.hero-next, .forecast-label { color: var(--muted); font-size: .82rem; }
+.hero-next { margin-top: -4px; }
+.hero-plan {
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--card);
+}
+.hero-plan > summary {
+  padding: 10px 14px;
+  min-height: 42px;
+  cursor: pointer;
+  color: var(--fg);
+  font-size: .86rem;
+  font-weight: 600;
+}
+.hero-plan > summary::marker { color: var(--accent); }
+.plan-tasks { display: grid; gap: 8px; padding: 0 8px 8px; }
+.forecast-label { margin-bottom: -5px; }
+.forecast button.fc {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font: inherit;
+}
 
 /* 未来 7 天到期迷你柱 */
 .forecast {
@@ -878,13 +1251,14 @@ input.spell.wrong { border-color: var(--bad); }
   padding-bottom: 1px;
 }
 .forecast .fc { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 3px; height: 100%; }
-.forecast .fc i { width: 100%; max-width: 20px; border-radius: 4px 4px 2px 2px; background: var(--accent); opacity: .8; min-height: 3px; }
+.forecast .fc i { width: 100%; max-width: 20px; border-radius: 4px 4px 2px 2px; background: var(--accent); opacity: .8; min-height: 0; }
 .forecast .fc.today i { opacity: 1; background: var(--warn); }
 .forecast .fc span { font-size: 9.5px; color: var(--muted); line-height: 1; }
 .forecast.lg { height: 62px; margin-bottom: 6px; }
 
 /* ---------- 开关 ---------- */
-.switch { position: relative; display: inline-flex; align-items: center; flex-shrink: 0; cursor: pointer; }
+.switch { position: relative; display: inline-flex; align-items: center; flex-shrink: 0; cursor: pointer;
+  padding: 5px 2px; user-select: none; -webkit-tap-highlight-color: transparent; }
 .switch input { position: absolute; opacity: 0; width: 0; height: 0; }
 .switch .track {
   width: 42px; height: 24px; border-radius: 999px;
@@ -901,6 +1275,35 @@ input.spell.wrong { border-color: var(--bad); }
 .switch input:checked + .track { background: var(--accent); }
 .switch input:checked + .track::after { transform: translateX(18px); }
 .switch input:focus-visible + .track { outline: 2px solid var(--accent); outline-offset: 2px; }
+/* 开 / 关 两个字：光靠颜色分辨不够，尤其是深色主题下 */
+.switch .sw-txt { font-style: normal; font-size: 12px; line-height: 1; color: var(--muted);
+  margin-left: 8px; min-width: 1.1em; transition: color .18s; }
+.switch .sw-txt::after { content: '关'; }
+.switch input:checked ~ .sw-txt { color: var(--accent); font-weight: 600; }
+.switch input:checked ~ .sw-txt::after { content: '开'; }
+.switch:hover .track { filter: brightness(1.04); }
+
+/* 自动发音失败时卡片顶部那条提示：能看清、能点掉、能跳去修 */
+.speak-warn {
+  align-self: stretch;
+  order: -1;
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+  padding: 7px 8px 7px 12px;
+  border: 1px solid var(--warn);
+  border-radius: 10px;
+  background: var(--warn-weak);
+  color: var(--fg);
+  font-size: 12.5px; line-height: 1.5;
+  text-align: left;
+}
+.speak-warn > span { flex: 1 1 180px; }
+.speak-warn button {
+  font: inherit; font-size: 12.5px; cursor: pointer;
+  border: 0; background: none; padding: 2px 5px; border-radius: 6px;
+  color: var(--warn); font-weight: 600;
+}
+.speak-warn button:hover { background: rgba(185, 122, 36, .14); }
+.speak-warn .sw-x { color: var(--muted); font-weight: 400; }
 
 /* ---------- 设置分组面板 ---------- */
 .panel {
@@ -925,6 +1328,43 @@ input.spell.wrong { border-color: var(--bad); }
   background: var(--card);
   color: var(--fg);
 }
+
+/* ---------- 设置页文本框（账号 / 验证码） ---------- */
+.set-input {
+  font: inherit; font-size: 13px;
+  padding: 7px 10px;
+  border-radius: 9px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--fg);
+  width: 100%;
+  min-width: 0;
+  text-align: left;
+}
+.set-input::placeholder { color: var(--muted); opacity: .65; }
+.set-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-weak);
+}
+/* 输入框在 .set-row 里独占一整行 —— 挤在右侧 auto 列会和标签抢宽度 */
+.set-row > .set-input { grid-column: 1 / -1; margin-top: 6px; }
+
+/* ---------- 账号与同步面板 ---------- */
+#sync-panel { padding-bottom: 6px; }
+#sync-panel .s-hint { margin: 8px 0 0; }
+#sync-panel .s-hint b { color: var(--fg); font-weight: 600; word-break: break-all; }
+#sync-panel .linkhint { margin-left: 6px; }
+/* 手机上不会有 hover，「换个邮箱」那种点线小字看着不像能点 —— 直接给主题色 */
+@media (hover: none) {
+  #sync-panel .linkhint { color: var(--accent); text-decoration-style: solid; }
+}
+#sync-panel .actions { margin: 10px 0 6px; }
+#sync-panel .actions button { flex: 1; min-height: 38px; }
+
+/* 「两边都有进度，用哪一边」：两个按钮竖排等宽，别一个宽一个窄 */
+.sync-choose { flex-direction: column; gap: 8px; }
+.sync-choose .big { width: 100%; }
 
 /* ---------- 完成页成绩单 ---------- */
 .done-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; width: 100%; max-width: 420px; }
@@ -1004,14 +1444,27 @@ input.spell.wrong { border-color: var(--bad); }
 
 @media (max-width: 560px) {
   .card { padding: 24px 16px; min-height: 300px; }
+  /* 手机竖向空间最金贵：答完把四个选项排回两列，一个字都不少，高度直接省一半 */
+  .card.answered .qopts { grid-template-columns: 1fr 1fr; gap: 7px; }
+  .card.answered .qopt { padding: 9px 9px; font-size: 12.5px; gap: 7px; }
+  .card.answered .qopt .qkey { width: 18px; height: 18px; font-size: 10px; border-radius: 5px; }
+  .card.answered .qopt .qen { padding-left: 25px; font-size: 10.5px; line-height: 1.35; margin-top: 2px; }
+  /* 手机上词头已经用大字显示过单词了，星标那行就别再重复一次 */
+  .card.answered .mhead { display: none; }
+  .card.answered .word { font-size: 1.45rem; }
+  .card.answered .sent { padding: 5px 30px 5px 10px; }
+  .card.answered .enmean { margin-top: 7px; padding-top: 6px; }
+  .card.answered .enline { font-size: 11.5px; }
+  .card.answered .phr-box { margin-top: 6px; }
+  .card.answered .meaning .phinline { margin-top: 5px; }
   .hints { gap: 10px; font-size: 11px; }
   #today { display: none; }
   .chgrid { grid-template-columns: repeat(auto-fill, minmax(56px, 1fr)); }
   .hero { padding: 18px 16px; }
   .hero-stats { gap: 8px; }
-  .ring-note { display: none; }
-  .ring { width: 88px; height: 88px; }
-  .ring-txt b { font-size: 22px; }
+  .bookwrap { width: 90px; }
+  .book-num b { font-size: 17px; }
+  .book-cap { font-size: 9px; letter-spacing: .8px; }
   .modeseg button { padding: 5px 8px; font-size: 12px; }
   .brand-name { display: none; }
   .done-cards { gap: 6px; }
@@ -1022,9 +1475,1533 @@ input.spell.wrong { border-color: var(--bad); }
 /* 触摸设备没有键盘：底部快捷键提示纯占地方，隐藏 */
 @media (hover: none) and (pointer: coarse) {
   .hints { display: none; }
+  /* 手指头比鼠标粗：🔊 / ☆ 这类小图标按钮必须撑到能点准的尺寸。
+     手机端「发音点不到」有一半是因为热区只有 24px，指腹一按就偏。 */
+  .icon { padding: 8px 10px; min-width: 42px; min-height: 42px; }
+  .speak-warn button { min-height: 34px; padding: 4px 8px; }
+  .speak-warn .sw-x { min-width: 34px; }
 }
 /* 窄屏（手机）没有实体键盘，快捷键提示同样隐藏，把屏幕留给卡片 */
 @media (max-width: 560px) {
   .hints { display: none; }
 }
 
+
+/* ============================================================
+   v3.5 今日任务台（复习 / 新词 / 顺带过）+ 教学卡
+   ============================================================ */
+.hero { justify-content: flex-start; gap: 14px; }
+
+.task {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 13px 15px;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+}
+.task.browse { background: var(--card); }
+.task-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.task-name { font-size: 12px; letter-spacing: 1.5px; color: var(--accent); font-weight: 600; }
+.task-head b { font-size: 13px; font-weight: 600; color: var(--fg); font-variant-numeric: tabular-nums; }
+.task-note { font-size: 12px; color: var(--muted); line-height: 1.6; }
+
+/* 两档单选：只练错词 / 到期都练 */
+.opts2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.opts2 button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font: inherit;
+  font-size: 13px;
+  padding: 9px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--muted);
+  cursor: pointer;
+  transition: background .15s, border-color .15s, color .15s, transform .08s;
+}
+.opts2 button i { font-style: normal; font-size: 11px; opacity: .7; font-variant-numeric: tabular-nums; }
+.opts2 button:hover { border-color: var(--accent); color: var(--fg); }
+.opts2 button:active { transform: scale(.97); }
+.opts2 button.on { background: var(--accent-weak); border-color: var(--accent); color: var(--accent); font-weight: 600; }
+.opts2 button.on i { opacity: 1; }
+
+/* 小圆片组 */
+.chips { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.chips-label { font-size: 11.5px; color: var(--muted); margin-right: 2px; }
+.chips button {
+  font: inherit;
+  font-size: 12.5px;
+  padding: 4px 11px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  transition: background .15s, border-color .15s, color .15s;
+}
+.chips button:hover { border-color: var(--accent); color: var(--fg); }
+.chips button.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+/* 新词数量加减器 */
+.numrow { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
+.step {
+  font: inherit;
+  font-size: 16px;
+  line-height: 1;
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--fg);
+  cursor: pointer;
+  transition: border-color .15s, color .15s, transform .08s;
+}
+.step:hover { border-color: var(--accent); color: var(--accent); }
+.step:active { transform: scale(.94); }
+.numin {
+  font: inherit;
+  font-size: 15px;
+  text-align: center;
+  width: 64px;
+  height: 30px;
+  border-radius: 9px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--fg);
+  font-variant-numeric: tabular-nums;
+  -moz-appearance: textfield;
+}
+.numin::-webkit-outer-spin-button,
+.numin::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.numin:focus { outline: none; border-color: var(--accent); }
+.numunit { font-size: 13px; color: var(--muted); }
+
+/* 连击 */
+.combo { color: var(--warn); font-weight: 600; }
+
+/* 教学卡 */
+.intro-mean { max-width: 600px; }
+.intro-mean .dblock + .dblock { margin-top: 4px; }
+@media (max-width: 560px) {
+  .task { padding: 12px 13px; }
+}
+
+/* 教学卡：按内容定高（释义可能 1 条也可能 5 条），别撑成满屏大空白 */
+.card.intro {
+  flex: 0 0 auto;
+  min-height: 0;
+  max-height: none;
+  justify-content: flex-start;
+  padding: 30px 26px 22px;
+  margin-top: 2px;         /* 贴着进度条往下排：居中会像悬在半空 */
+}
+.fcempty { font-size: 11.5px; color: var(--muted); text-align: center; padding: 10px 0 6px; }
+.tinyhint .linkhint { text-decoration: underline; color: var(--accent); padding: 0; }
+.browse-go {
+  font: inherit;
+  font-size: 13px;
+  padding: 8px 14px;
+  border-radius: 10px;
+  border: 1px dashed var(--border);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  transition: color .15s, border-color .15s, background .15s;
+  white-space: nowrap;
+}
+.browse-go:hover { color: var(--accent); border-color: var(--accent); }
+
+/* 顺带过压成一行：它只是次要入口，别占一整个面板把主按钮挤出首屏 */
+#task-browse { padding: 10px 14px; }
+.browse-line { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.browse-txt { font-size: 12.5px; color: var(--muted); line-height: 1.5; }
+.browse-txt b { color: var(--fg); font-variant-numeric: tabular-nums; }
+
+/* 矮窗口（笔记本 720–860）：压缩封面的纵向节奏，保证「开始」按钮留在首屏 */
+@media (max-height: 860px) {
+  .hero { gap: 10px; padding: 14px 20px 12px; }
+  .hero h1 { font-size: 1.5rem; }
+  .hero-sub { margin-top: 4px; }
+  .task { padding: 9px 12px; }
+  .hstat { padding: 7px 6px; }
+  .hstat b { font-size: 18px; }
+  .hstat span { font-size: 11px; }
+  .forecast { height: 34px; }
+  .cta, .hero-actions .big { padding: 12px 16px; }
+}
+
+/* 高窗口：任务台垂直居中，别贴在顶栏下面留一大片空 */
+@media (min-height: 900px) {
+  #page-study { justify-content: center; }
+}
+
+/* ============================================================
+   v3.6 单词本：多选批量操作 + 单行「⋯」下拉菜单 + 已掌握
+   ============================================================ */
+.lbar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.lbar-sp { flex: 1; }
+#list-head { display: flex; flex-direction: column; gap: 8px; }
+#sel-acts { display: flex; gap: 7px; flex-wrap: wrap; }
+#sel-acts button {
+  font: inherit;
+  font-size: 13px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--fg);
+  cursor: pointer;
+  transition: border-color .15s, color .15s, background .15s;
+}
+#sel-acts button:hover { border-color: var(--accent); color: var(--accent); }
+#sel-acts button.danger { color: var(--bad); border-color: var(--bad-weak); }
+#sel-acts button.armed { background: var(--bad); color: #fff; border-color: var(--bad); }
+#sel-count { font-size: 12.5px; }
+
+/* 行：勾选框（多选时才出现）+ ⋯ 菜单 */
+.rowcheck { display: none; font-size: 15px; color: var(--muted); flex-shrink: 0; }
+.rowlist.selmode .rowcheck { display: inline; }
+.rowlist.selmode .dot { display: none; }
+.row.sel { border-color: var(--accent); background: var(--accent-weak); }
+.row.f-park .rword { color: var(--muted); }
+.rowmore {
+  flex-shrink: 0;
+  font: inherit;
+  font-size: 16px;
+  line-height: 1;
+  padding: 2px 6px;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+}
+.rowmore:hover { background: var(--bg); color: var(--fg); }
+.parkmark { font-style: normal; font-size: 11px; color: var(--muted); border: 1px solid var(--border); border-radius: 6px; padding: 1px 5px; }
+.notemark { font-style: normal; font-size: 11px; color: var(--accent); }
+
+/* 「⋯」弹出的浮层菜单 */
+.rowmenu {
+  position: absolute;
+  z-index: 60;
+  min-width: 200px;
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 12px 30px rgba(60, 50, 30, .18);
+}
+.rowmenu .rmhead {
+  font-size: 12px;
+  color: var(--muted);
+  padding: 4px 10px 7px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid var(--border);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.rowmenu button {
+  font: inherit;
+  font-size: 13px;
+  text-align: left;
+  padding: 9px 10px;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  color: var(--fg);
+  cursor: pointer;
+}
+.rowmenu button:hover { background: var(--bg); }
+.rowmenu button.on { color: var(--accent); font-weight: 600; }
+.rowmenu button.danger { color: var(--bad); }
+
+/* 自己写的释义 / 备注 */
+.mynote {
+  font-size: 13px;
+  color: var(--accent);
+  background: var(--accent-weak);
+  border-radius: 8px;
+  padding: 6px 10px;
+  margin: 2px 0 8px;
+  text-align: left;
+  max-width: 600px;
+}
+.notebox { width: 100%; max-width: 520px; display: flex; flex-direction: column; gap: 6px; align-items: stretch; }
+.notebox button { align-self: flex-end; font-size: 13px; padding: 7px 14px; }
+.notein {
+  flex: 1;
+  font: inherit;
+  font-size: 13px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--fg);
+  resize: vertical;
+}
+.notein:focus { outline: none; border-color: var(--accent); }
+.parkrow { gap: 6px; }
+.parkrow button { font-size: 12.5px; padding: 7px 10px; }
+button.big.danger { color: var(--bad); border-color: var(--bad-weak); }
+button.big.danger.armed { background: var(--bad); color: #fff; border-color: var(--bad); }
+
+/* 统计弹窗里的说明块 */
+.panel.howto { text-align: left; font-size: 12.5px; line-height: 1.75; color: var(--muted); }
+.panel.howto p + p { margin-top: 6px; }
+.panel.howto b { color: var(--fg); }
+
+/* ============================================================
+   v3.7 布局：主区 + 右侧进度边栏（宽屏常驻 / 窄屏抽屉）
+   ============================================================ */
+.shell {
+  flex: 1;
+  width: 100%;
+  max-width: 1152px;
+  margin: 0 auto;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 18px;
+}
+.shell > main { flex: 1 1 0; min-width: 0; margin: 0; }
+
+/* ---------- 边栏 ---------- */
+.side {
+  display: none;
+  flex-direction: column;
+  gap: 8px;
+  flex: 0 0 296px;
+  width: 296px;
+  margin: 16px 16px 10px 0;
+  padding: 12px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: var(--shadow);
+  position: sticky;
+  top: 58px;
+  max-height: calc(100vh - 74px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.side.open { display: flex; }
+.side::-webkit-scrollbar { width: 6px; }
+.side::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+@media (min-width: 1180px) {
+  #side { display: flex; }
+  #btn-side { display: none; }
+}
+/* 窄屏：抽屉（从右侧滑入） */
+@media (max-width: 1179px) {
+  .side.open {
+    position: fixed;
+    z-index: 61;
+    top: 0; right: 0; bottom: 0;
+    width: min(330px, 88vw);
+    max-height: none;
+    margin: 0;
+    border-radius: 0;
+    border-right: none;
+    padding: 16px;
+    box-shadow: -12px 0 30px rgba(60, 50, 30, .18);
+  }
+  #side-scrim {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    background: rgba(30, 26, 18, .38);
+  }
+  #side-scrim.open { display: block; }
+}
+
+/* 边栏内的小面板 */
+.s-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+.s-hbox { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.s-x {
+  flex: 0 0 auto;
+  font: inherit;
+  font-size: 13px;
+  line-height: 1;
+  padding: 4px 6px;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+}
+.s-x:hover { background: var(--bg); color: var(--fg); }
+.s-date { font-size: 11.5px; letter-spacing: 1.2px; color: var(--muted); text-transform: uppercase; }
+.s-book { font-size: 13px; font-weight: 600; }
+.s-card {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 9px 11px;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.s-title { font-size: 11.5px; font-weight: 600; letter-spacing: .5px; color: var(--muted); }
+
+/* 待复习大数字 */
+.s-big { display: flex; align-items: baseline; gap: 6px; }
+.s-big b { font-size: 26px; line-height: 1; font-variant-numeric: tabular-nums; color: var(--accent); }
+.s-big span { font-size: 12.5px; color: var(--muted); }
+.s-sub { font-size: 11.5px; color: var(--muted); line-height: 1.55; }
+.s-sub b { color: var(--fg); font-variant-numeric: tabular-nums; }
+
+/* 进度条 */
+.s-line { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; font-size: 12.5px; }
+.s-line b { font-variant-numeric: tabular-nums; font-weight: 600; }
+.bar { height: 6px; border-radius: 4px; background: var(--border); overflow: hidden; }
+.bar > i { display: block; height: 100%; width: 0; border-radius: 4px; background: var(--accent); transition: width .25s ease-out; }
+.bar > i.warnbar { background: var(--warn); }
+.bar > i.donebar { background: var(--accent); }
+
+/* 数字输入行 */
+.s-form { display: flex; align-items: center; gap: 8px; font-size: 12.5px; }
+.s-form label { flex: 1; color: var(--fg); }
+.s-form input {
+  font: inherit;
+  font-size: 13px;
+  width: 62px;
+  padding: 5px 8px;
+  text-align: right;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--card);
+  color: var(--fg);
+  font-variant-numeric: tabular-nums;
+}
+.s-form input:focus { outline: none; border-color: var(--accent); }
+.s-form input::-webkit-outer-spin-button,
+.s-form input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.s-form .set-num input { text-align: right; }
+.s-hint { font-size: 11px; color: var(--muted); line-height: 1.5; }
+
+/* 四宫格库存 */
+.s-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.s-grid div { display: flex; flex-direction: column; gap: 2px; }
+.s-grid b { font-size: 16px; font-variant-numeric: tabular-nums; }
+.s-grid span { font-size: 11px; color: var(--muted); }
+
+/* 7 日预测迷你柱 */
+.s-fc { display: flex; align-items: flex-end; gap: 4px; height: 36px; }
+.s-fc .fc2 { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 3px; height: 100%; }
+.s-fc .fc2 i { width: 100%; max-width: 14px; min-height: 2px; border-radius: 3px 3px 0 0; background: var(--accent-weak); }
+.s-fc .fc2.today i { background: var(--accent); }
+.s-fc .fc2 span { font-size: 9.5px; color: var(--muted); line-height: 1; }
+.s-actions {
+  display: flex;
+  gap: 8px;
+  position: sticky;
+  bottom: -12px;
+  margin-top: 2px;
+  padding: 8px 0 2px;
+  background: var(--card);
+}
+.s-actions button { flex: 1; }
+
+/* ============================================================
+   v3.7 设置面板：数字直填 + 行内说明，去掉一堆下拉框
+   ============================================================ */
+#side-scrim { display: none; }
+@media (min-width: 1180px) { .s-x { display: none; } }
+
+.set-panel { padding: 2px 16px; }
+.set-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 2px 14px;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--border);
+}
+.set-row:last-child { border-bottom: none; }
+.set-row > label { font-size: 13.5px; white-space: nowrap; }
+.set-row > .s-hint { grid-column: 1 / -1; margin-top: 2px; }
+
+/* 带按钮组的行（发音自检）：窄屏下按钮排队会把 1fr 列压成一个字宽，
+   标签变成竖排「发 / 音 / 自 / 检」。这里改成上下排，标签占满整行。 */
+@media (max-width: 560px) {
+  .set-row:has(.vbtns) { grid-template-columns: 1fr; row-gap: 8px; align-items: start; }
+  .set-row:has(.vbtns) > .vbtns { grid-column: 1 / -1; justify-content: flex-start; }
+  .set-row:has(.vbtns) > .s-hint { grid-column: 1 / -1; }
+}
+.set-num {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--card);
+  transition: border-color .15s;
+}
+.set-num:focus-within { border-color: var(--accent); }
+.set-num input {
+  font: inherit;
+  font-size: 13.5px;
+  width: 56px;
+  padding: 0;
+  text-align: right;
+  border: 0;
+  background: none;
+  color: var(--fg);
+  font-variant-numeric: tabular-nums;
+}
+.set-num input:focus { outline: none; }
+.set-num input::-webkit-outer-spin-button,
+.set-num input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.set-num i { font-style: normal; font-size: 11.5px; color: var(--muted); white-space: nowrap; }
+.set-foot { margin-top: -4px; }
+.modal .actions.split { justify-content: flex-start; }
+
+/* ============================================================
+   v3.8 边栏可收起 + 学习页一屏装下
+   ============================================================ */
+
+/* ---------- 边栏收起后的右边缘把手（只在宽屏出现） ---------- */
+.side-tab {
+  display: none;
+  position: fixed;
+  right: 10px;
+  top: 44%;
+  z-index: 30;
+  align-items: center;
+  gap: 5px;
+  padding: 8px 14px 8px 11px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--muted);
+  font: inherit;
+  font-size: 12px;
+  line-height: 1.2;
+  cursor: pointer;
+  box-shadow: 0 2px 10px rgba(60, 50, 30, .10);
+  transition: color .15s, transform .15s;
+}
+.side-tab:hover { color: var(--accent); transform: translateX(-3px); }
+.side-tab .chev { font-size: 13px; }
+@media (min-width: 1180px) {
+  body.side-collapsed #side { display: none; }
+  body.side-collapsed .side-tab { display: flex; }
+}
+.s-col {
+  flex: 0 0 auto;
+  font: inherit;
+  font-size: 13px;
+  line-height: 1;
+  padding: 4px 6px;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+}
+.s-col:hover { background: var(--bg); color: var(--fg); }
+@media (max-width: 1179px) { .s-col { display: none; } }
+
+/* ---------- 学习页锁高：整页不出滚动条，多余空间给卡片 ---------- */
+body.study-lock { height: 100dvh; overflow: hidden; }
+/* .shell 平时是 align-items:flex-start（为了让边栏能 sticky），锁高时必须让 main 拉满，
+   否则 main 会按内容长高、把页面顶出视口 */
+body.study-lock .shell { min-height: 0; align-items: stretch; }
+body.study-lock #side { align-self: flex-start; max-height: calc(100% - 26px); }
+body.study-lock main { min-height: 0; max-height: 100%; }
+body.study-lock .page { min-height: 0; }
+#study-main { min-height: 0; }
+body.study-lock .card {
+  min-height: 0;
+  justify-content: flex-start;   /* 内容超高时从顶部开始，别把上半截裁掉 */
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  /* 只在真放不下时才滚，滚动条做成细胶囊，别在卡片里刻一道竖线 */
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+body.study-lock .card::-webkit-scrollbar { width: 6px; }
+body.study-lock .card::-webkit-scrollbar-track { background: transparent; }
+body.study-lock .card::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 999px;
+}
+/* 内容一律从顶部起排，多余空间全部留在下方。
+   好处：词的位置在每张卡上都固定，答题后释义从下方接出来，上面的字不会往上顶。 */
+body.study-lock .card > :first-child { margin-top: 0; }
+body.study-lock .card > :last-child { margin-bottom: auto; }
+body.study-lock .card:not(.intro) { padding: 24px 24px 20px; gap: 12px; }
+
+/* 矮窗口：把卡内节奏压紧，让「答错反馈」这种长卡也能一屏看完 */
+/* 注意：必须写成 .card:not(.intro) 才压得过上面那条同优先级的规则，否则分档压缩对答题卡不生效 */
+@media (max-height: 880px) {
+  body.study-lock .card:not(.intro) { gap: 9px; padding: 18px 20px 14px; }
+  body.study-lock .card.intro { padding: 14px 20px 10px; }
+  .word { font-size: clamp(1.7rem, 4.6vw, 2.2rem); }
+  .meaning { font-size: .98rem; line-height: 1.55; gap: 5px; }
+  .sent { padding: 6px 10px; }
+  .sent .en { font-size: .93rem; }
+  .sent .cn { font-size: .82rem; margin-top: 2px; }
+  .qopts { gap: 7px; }
+  .qopt { padding: 9px 11px; font-size: 13.5px; }
+  .hints { padding: 4px 12px 5px; gap: 10px; font-size: 11px; }
+  #study-sub { font-size: 12.5px; }
+}
+/* 更矮：快捷键条让位给卡片（内容在 ? 里能查到） */
+@media (max-height: 820px) {
+  #hints { display: none; }
+  /* 边栏的 7 天预测在封面和统计里都有，矮屏先收起来，保证整栏不用滚 */
+  #side .s-fccard { display: none; }
+}
+/* 手机宽度：顶栏只留品牌 + 模式 + 图标，今日进度在边栏里 */
+@media (max-width: 560px) {
+  #topbar { padding: 6px 10px; }
+  #today, #streak { display: none; }
+  .brand-name { display: none; }
+}
+
+/* 再矮一档（720 笔记本 / 横屏手机）：间距再收一档，答错反馈也能整屏看完 */
+@media (max-height: 780px) {
+  body.study-lock .card:not(.intro) { padding: 16px 18px 12px; gap: 6px; }
+  body.study-lock .card.intro { padding: 12px 18px 8px; }
+  .word { font-size: clamp(1.6rem, 4.2vw, 2rem); }
+  .meaning { font-size: .95rem; line-height: 1.5; }
+  .sent { padding: 5px 9px; }
+  .qopt { padding: 7px 10px; }
+}
+@media (max-width: 560px) and (max-height: 820px) {
+  #nav button { padding: 5px 4px 6px; font-size: 11px; }
+  #nav button svg { width: 19px; height: 19px; }
+}
+
+/* 手机宽度：字号与内边距再收一档，答错反馈那种长卡也能整屏 */
+@media (max-width: 560px) {
+  .qfb { gap: 5px; }
+  .qres { font-size: 14px; gap: 6px; }
+  .qopt { padding: 7px 9px; font-size: 13px; }
+  .word { font-size: clamp(1.5rem, 7.6vw, 1.9rem); }
+  .tagline { font-size: 11px; padding: 2px 8px; }
+  .phon { font-size: 12px; }
+  .meaning { font-size: .9rem; line-height: 1.45; gap: 4px; }
+  .sent { padding: 5px 8px; }
+  .sent .en { font-size: .88rem; }
+  .sent .cn { font-size: .78rem; }
+  body.study-lock .card { padding-left: 14px; padding-right: 14px; }
+}
+
+/* 答错反馈里的按钮与释义行再紧一点（长卡收口的最后几像素） */
+@media (max-height: 820px) {
+  .qfb { gap: 4px; }
+  .qfb .actions { gap: 7px; }
+  .qfb .actions button { padding: 8px 15px; font-size: 14px; }
+  .qfb .meaning { line-height: 1.42; }
+}
+@media (max-width: 560px) {
+  .qopt { padding: 5px 9px; }
+  .qopt .qkey { width: 20px; height: 20px; }
+}
+
+/* ---------- v3.9：卡片上的「不用再考了」两个出口 ---------- */
+.wacts {
+  display: flex;
+  gap: 14px;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-top: -2px;
+}
+.wacts .linkhint {
+  font-size: 11.5px;
+  color: var(--muted);
+  text-decoration: none;
+  padding: 2px 4px;
+  border-radius: 6px;
+  transition: color .15s, background .15s;
+}
+.wacts .linkhint:hover { color: var(--accent); background: var(--accent-weak); }
+.wacts kbd { font-size: 10px; padding: 0 4px; margin-left: 2px; }
+
+/* ============================================================
+   v3.9 视觉精修：纸感层次 + 交互反馈 + 排版节奏
+   只动颜色/阴影/圆角/微动效，不动字号与内边距（不破坏「一屏装下」）
+   ============================================================ */
+
+/* ① 卡片：一层贴近的接触阴影 + 一层扩散阴影 + 顶部内高光 = 一张真的纸 */
+.card {
+  border-radius: 22px;
+  border-color: rgba(60, 50, 30, .08);
+  box-shadow:
+    0 1px 2px rgba(60, 50, 30, .05),
+    0 14px 34px -14px rgba(60, 50, 30, .16),
+    inset 0 1px 0 rgba(255, 255, 255, .7);
+}
+:root[data-theme="dark"] .card {
+  border-color: rgba(255, 255, 255, .06);
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, .5),
+    0 14px 34px -14px rgba(0, 0, 0, .55),
+    inset 0 1px 0 rgba(255, 255, 255, .04);
+}
+@media (prefers-color-scheme: dark) {
+  :root[data-theme="auto"] .card {
+    border-color: rgba(255, 255, 255, .06);
+    box-shadow:
+      0 1px 2px rgba(0, 0, 0, .5),
+      0 14px 34px -14px rgba(0, 0, 0, .55),
+      inset 0 1px 0 rgba(255, 255, 255, .04);
+  }
+}
+
+/* ② 单词：纸面压印感，字重与字距收一点，更像排印 */
+.word {
+  text-shadow: 0 1px 0 rgba(255, 255, 255, .55);
+  letter-spacing: .2px;
+}
+:root[data-theme="dark"] .word { text-shadow: 0 1px 0 rgba(0, 0, 0, .35); }
+@media (prefers-color-scheme: dark) {
+  :root[data-theme="auto"] .word { text-shadow: 0 1px 0 rgba(0, 0, 0, .35); }
+}
+
+/* ③ 选项：抬起来一点点，鼠标扫过就知道能点 */
+.qopt {
+  box-shadow: 0 1px 2px rgba(60, 50, 30, .045);
+  transition: transform .12s ease, border-color .15s, background .15s,
+              color .15s, opacity .2s, box-shadow .15s;
+}
+.qopt:not(:disabled):hover {
+  transform: translateY(-1px);
+  border-color: rgba(62, 142, 104, .45);
+  box-shadow: 0 4px 12px -4px rgba(60, 50, 30, .18);
+}
+.qopt:not(:disabled):active { transform: translateY(0) scale(.995); }
+/* 判定后：外圈一层半透明光晕，比单纯换底色更"确认"，又不至于画成两道边框 */
+.qopt-ok { box-shadow: 0 0 0 3px rgba(62, 142, 104, .15); }
+.qopt-bad { box-shadow: 0 0 0 3px rgba(192, 91, 77, .15); }
+:root[data-theme="dark"] .qopt-ok { box-shadow: 0 0 0 3px rgba(105, 181, 140, .2); }
+:root[data-theme="dark"] .qopt-bad { box-shadow: 0 0 0 3px rgba(214, 127, 112, .2); }
+.qopt-ok, .qopt-bad { animation: optpop .22s cubic-bezier(.22, 1.3, .4, 1); }
+@keyframes optpop { from { transform: scale(.985); } to { transform: scale(1); } }
+
+/* ④ 进度条：渐变 + 端点柔光，填到哪一眼看得见 */
+#pbar { background: rgba(60, 50, 30, .085); box-shadow: inset 0 1px 1px rgba(60, 50, 30, .06); }
+:root[data-theme="dark"] #pbar { background: rgba(255, 255, 255, .08); }
+@media (prefers-color-scheme: dark) { :root[data-theme="auto"] #pbar { background: rgba(255, 255, 255, .08); } }
+#pbar-in {
+  background-image: linear-gradient(90deg, rgba(255, 255, 255, .0), rgba(255, 255, 255, .28));
+  background-color: var(--accent);
+  box-shadow: 0 0 8px -2px var(--accent);
+  transition: width .28s cubic-bezier(.3, .9, .3, 1);
+}
+
+/* ⑤ 主按钮：顶部一点高光，按下有回弹 */
+button.primary {
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, .16), rgba(255, 255, 255, 0) 62%);
+  box-shadow: 0 2px 10px rgba(62, 142, 104, .26), inset 0 1px 0 rgba(255, 255, 255, .22);
+  transition: transform .08s, box-shadow .18s, filter .15s;
+}
+button.primary:hover {
+  filter: brightness(1.04);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px -4px rgba(62, 142, 104, .4), inset 0 1px 0 rgba(255, 255, 255, .22);
+}
+button.primary:active { transform: translateY(0) scale(.975); }
+/* 深色主题：主色本身偏亮，改用深色字 + 更弱的高光，白字会糊成一片 */
+:root[data-theme="dark"] button.primary {
+  color: #14201a;
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, .1), rgba(255, 255, 255, 0) 60%);
+}
+@media (prefers-color-scheme: dark) {
+  :root[data-theme="auto"] button.primary {
+    color: #14201a;
+    background-image: linear-gradient(180deg, rgba(255, 255, 255, .1), rgba(255, 255, 255, 0) 60%);
+  }
+}
+button.big:not(.primary):hover { background: var(--card); }
+
+/* ⑥ tagline：从"带框胶囊"改成"轻墨底"，不跟卡片抢边线 */
+.tagline {
+  border-color: transparent;
+  background: rgba(60, 50, 30, .045);
+  letter-spacing: 1px;
+  box-shadow: none;
+}
+:root[data-theme="dark"] .tagline { background: rgba(255, 255, 255, .055); }
+@media (prefers-color-scheme: dark) { :root[data-theme="auto"] .tagline { background: rgba(255, 255, 255, .055); } }
+
+/* ⑦ 例句：左侧强调条改成"引文条"，底色更淡 */
+.sent { border-left-width: 2px; border-radius: 4px 10px 10px 4px; }
+
+/* ⑧ 边栏卡片：鼠标扫过轻轻亮一下（12 张小卡，别每个都弹） */
+.s-card { transition: border-color .16s, background .16s, box-shadow .16s; }
+.s-card:hover {
+  border-color: rgba(62, 142, 104, .3);
+  box-shadow: 0 2px 8px -4px rgba(60, 50, 30, .18);
+}
+
+/* ⑨ 完成页数字：让成绩单先被看见 */
+.done-cards .dc b {
+  color: var(--accent);
+  font-size: 22px;
+  letter-spacing: .3px;
+}
+.done-cards .dc { background: var(--card); }
+
+/* ⑩ 顶栏 / 底栏：半透明 + 毛玻璃，滚动内容从底下透出来 */
+#topbar, #nav {
+  backdrop-filter: saturate(1.25) blur(10px);
+  -webkit-backdrop-filter: saturate(1.25) blur(10px);
+  background-color: rgba(253, 251, 245, .86);
+}
+:root[data-theme="dark"] #topbar,
+:root[data-theme="dark"] #nav { background-color: rgba(29, 32, 36, .86); }
+@media (prefers-color-scheme: dark) {
+  :root[data-theme="auto"] #topbar,
+  :root[data-theme="auto"] #nav { background-color: rgba(29, 32, 36, .86); }
+}
+
+/* ⑪ 键盘可见性：Tab 到哪儿一目了然（不影响鼠标点击） */
+button:focus-visible,
+input:focus-visible,
+select:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* 深色下主按钮里的 kbd：白底键帽配深字按钮会糊，改成半透明深键帽 */
+:root[data-theme="dark"] button.primary kbd {
+  background: rgba(0, 0, 0, .12);
+  border-color: rgba(0, 0, 0, .2);
+  color: #14201a;
+}
+@media (prefers-color-scheme: dark) {
+  :root[data-theme="auto"] button.primary kbd {
+    background: rgba(0, 0, 0, .12);
+    border-color: rgba(0, 0, 0, .2);
+    color: #14201a;
+  }
+}
+/* ================= 启动失败兜底卡片 =================
+   白屏是最糟的体验：用户不知道是文件坏了、浏览器拦了还是没装 JS。
+   这里给一个能读的交代，并把可执行的下一步列出来。 */
+.fatal {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: var(--bg, #f5f1e8);
+  overflow: auto;
+}
+.fatal-box {
+  max-width: 560px;
+  width: 100%;
+  background: var(--card, #fffdf7);
+  border: 1px solid var(--line, rgba(0, 0, 0, .1));
+  border-radius: 18px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, .12);
+  padding: 26px 24px;
+}
+.fatal-box h2 {
+  margin: 0 0 10px;
+  font-size: 18px;
+  color: var(--bad, #b4433a);
+}
+.fatal-d {
+  margin: 0 0 10px;
+  font-size: 13.5px;
+  line-height: 1.75;
+  color: var(--muted, #6b6558);
+}
+.fatal-d b { color: var(--ink, #2b2a26); }
+.fatal-pre {
+  margin: 10px 0 14px;
+  padding: 10px 12px;
+  max-height: 180px;
+  overflow: auto;
+  background: rgba(0, 0, 0, .045);
+  border-radius: 10px;
+  font: 12px/1.6 Consolas, Menlo, monospace;
+  color: var(--muted, #6b6558);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+:root[data-theme="dark"] .fatal-box { background: #1b1e22; }
+:root[data-theme="dark"] .fatal-pre { background: rgba(255, 255, 255, .06); }
+@media (prefers-color-scheme: dark) {
+  :root[data-theme="auto"] .fatal-box { background: #1b1e22; }
+  :root[data-theme="auto"] .fatal-pre { background: rgba(255, 255, 255, .06); }
+}
+
+/* 发音自检：两个按钮并排，窄屏自动换行 */
+.vbtns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+/* 「正在读」反馈：网络音色首字要等 1.5 秒，按钮必须先动起来，
+   否则用户会认为点了没反应 —— 这是「声音播放不了」的体感来源之一。 */
+@keyframes spkpulse {
+  0%, 100% { transform: scale(1);    opacity: .72; }
+  50%      { transform: scale(1.16); opacity: 1;   }
+}
+body.is-speaking #speak,
+body.is-speaking #playw,
+body.is-speaking #speak2 {
+  animation: spkpulse .85s ease-in-out infinite;
+  opacity: 1;
+}
+@media (prefers-reduced-motion: reduce) {
+  body.is-speaking #speak,
+  body.is-speaking #playw,
+  body.is-speaking #speak2 { animation: none; outline: 2px solid var(--accent); }
+}
+
+/* ============================================================
+   v4.0 语境模式 / 今日目标环 / 联动图表 / 词族 / 顽固词
+   新组件一律吃现有变量，深浅两色自动跟着走
+   ============================================================ */
+
+/* ---------- ① 封面：文案 + 今日进度之书（v5.1 由圆环改来） ---------- */
+.hero-top { display: flex; align-items: center; gap: 16px; }
+.hero-copy { flex: 1; min-width: 0; }
+.hero-top .bookwrap { margin-top: 0; }
+/* 矮窗口（720–860）把书整体缩小，否则「开始」按钮会被挤出首屏 */
+@media (max-height: 860px) {
+  .bookwrap { width: 92px; }
+  .book-num b { font-size: 17.5px; }
+  .book-cap { display: none; }
+  .hero-top { gap: 12px; }
+}
+
+/* ---------- ② 图表可点：柱子上给指针与抬起反馈 ---------- */
+.forecast .fc.fclick, .s-fc .fc2.fclick { cursor: pointer; border-radius: 5px; transition: background .15s; }
+.forecast .fc.fclick:hover { background: var(--accent-weak); }
+.forecast .fc.fclick:hover i { filter: brightness(1.12); }
+.s-fc .fc2.fclick:hover i { background: var(--accent); }
+.s-tip { font-style: normal; font-weight: 400; font-size: 10px; letter-spacing: 0; opacity: .75; margin-left: 6px; }
+
+/* ---------- ③ 语境卡 ---------- */
+.ctxq {
+  width: 100%;
+  max-width: 560px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 16px 18px;
+  text-align: left;
+}
+.ctxsent { background: none; border: none; padding: 0; }
+.ctxsent .en { font-size: 1.06rem; line-height: 1.8; }
+.ctxmeta { font-size: 12.5px; color: var(--muted); display: flex; gap: 8px; align-items: center; flex-wrap: wrap; justify-content: center; }
+.ctxmeta b { color: var(--accent); font-weight: 600; }
+.ctxmeta button { min-height: 30px; color: var(--accent); }
+.ctxmeta button:disabled { display: none; }
+@media (max-height: 820px) {
+  .ctxq { padding: 10px 14px; }
+  .ctxsent .en { font-size: .98rem; line-height: 1.65; }
+  .ctxmeta { font-size: 11.5px; }
+}
+
+/* ---------- ④ 词族（同根词） ---------- */
+.family {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 2px;
+  font-size: 11.5px;
+  color: var(--muted);
+}
+.family .flabel {
+  font-size: 10.5px;
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  padding: 0 4px;
+  opacity: .85;
+  flex-shrink: 0;
+}
+.family .famchip { font-size: 11.5px; padding: 1px 8px; color: var(--fg); background: var(--card); }
+.family .famchip:hover { color: var(--accent); }
+
+/* ---------- ⑤ 顽固词标记 ---------- */
+.leechmark {
+  color: var(--bad);
+  font-weight: 600;
+}
+.leechmark::before { content: '🧱 '; font-weight: 400; }
+
+/* ---------- ⑥ 边栏：可点的数字 + 顽固词入口 ---------- */
+.s-grid .sg {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  font: inherit;
+  text-align: left;
+  padding: 4px 6px;
+  margin: -4px -6px;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  background: none;
+  color: var(--fg);
+  cursor: pointer;
+  transition: background .15s, border-color .15s, transform .08s;
+}
+.s-grid .sg:hover { background: var(--accent-weak); border-color: var(--accent-weak); }
+.s-grid .sg:active { transform: scale(.97); }
+.s-grid .sg b { font-size: 16px; font-variant-numeric: tabular-nums; }
+.s-grid .sg span { font-size: 11px; color: var(--muted); }
+.s-leech {
+  width: 100%;
+  margin-top: 10px;
+  font: inherit;
+  font-size: 12px;
+  padding: 7px 10px;
+  border-radius: 9px;
+  border: 1px dashed var(--bad);
+  background: var(--bad-weak);
+  color: var(--bad);
+  cursor: pointer;
+  text-align: left;
+  transition: filter .15s, transform .08s;
+}
+.s-leech:hover { filter: brightness(.97); }
+.s-leech:active { transform: scale(.99); }
+.s-leech b { font-variant-numeric: tabular-nums; }
+.s-big b { cursor: pointer; }
+.s-big b:hover { text-decoration: underline dotted; }
+
+/* ---------- ⑦ 统计：记忆健康度 ---------- */
+.panel.health { padding: 10px 14px 8px; }
+.health .hrow { display: flex; align-items: baseline; gap: 10px; margin: 2px 0 8px; flex-wrap: wrap; }
+.health .hbig { font-size: 24px; font-variant-numeric: tabular-nums; color: var(--accent); line-height: 1; }
+.health .hdesc { font-size: 12px; color: var(--muted); }
+.health.g-mid .hbig { color: var(--warn); }
+.health.g-low .hbig { color: var(--bad); }
+.health .s-hint { margin: 6px 0 4px; }
+.chip .wm { font-style: normal; font-size: 10px; opacity: .65; margin-left: 2px; }
+
+/* ---------- ⑧ 自定义词表导入 ---------- */
+.ct-sample {
+  white-space: pre-wrap;
+  font-size: 12px;
+  color: var(--muted);
+  margin: 8px 0 10px;
+}
+.ct-ta {
+  width: 100%;
+  min-height: 150px;
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 12.5px;
+  line-height: 1.6;
+  resize: vertical;
+}
+
+/* 边栏状态格 3 列 × 2 行：未背 / 已背 / 错词 / 已掌握 / 收藏（5 格，v6.6 去掉暂缓后空一格） */
+.s-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.s-grid .sg { align-items: center; text-align: center; padding: 4px 2px; margin: 0; }
+.s-grid .sg b { font-size: 15px; }
+.s-grid .sg span { font-size: 10.5px; }
+
+/* ================= v4.1：错因对比 / 遗忘曲线 / 易混词对 =================
+   这一版新增的都是「让人看得懂自己在忘什么、混什么」的元件。
+   颜色一律走变量，深浅主题都不用另写一套。 */
+
+/* ---- 错因对比：答错时把「你选的」和「正确」并排摆出来 ---- */
+.why {
+  width: 100%;
+  max-width: 460px;
+  margin: 7px 0 8px;
+  padding: 6px 9px;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--bad);
+  border-radius: 10px;
+  background: var(--card);
+}
+.why-row {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  font-size: 12.5px;
+  line-height: 1.45;
+  padding: 1px 0;
+}
+.why-tag {
+  flex: none;
+  font-size: 11px;
+  padding: 1px 6px;
+  border-radius: 5px;
+  background: var(--border);
+  color: var(--muted);
+  letter-spacing: .3px;
+}
+.why-row.bad .why-tag { background: var(--bad-weak); color: var(--bad); }
+.why-row.ok .why-tag { background: var(--ok-weak); color: var(--ok); }
+.why-row b { font-weight: 650; letter-spacing: .2px; }
+.why-row.bad b { color: var(--bad); text-decoration: line-through .5px; }
+.why-row.ok b { color: var(--ok); }
+.why-d {
+  margin-left: auto;          /* 释义靠右：两行自然对齐成一对照表，不留半截空白 */
+  text-align: right;
+  color: var(--muted);
+  font-size: 12.5px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.why-hint {
+  margin-top: 5px;
+  font-size: 11.5px;
+  line-height: 1.6;
+  color: var(--muted);
+}
+.why-hint b { color: var(--fg); }
+
+/* ---- 遗忘曲线小图：这次答完后，接下来会忘多少 ---- */
+.fcurve {
+  display: block;
+  width: 100%;
+  max-width: 460px;
+  height: 44px;
+  margin: 6px 0 2px;
+  overflow: visible;
+}
+.fcurve .fc-area { fill: var(--accent-weak); opacity: .75; }
+.fcurve .fc-line { fill: none; stroke: var(--accent); stroke-width: 1.6; stroke-linejoin: round; }
+.fcurve .fc-dash {
+  stroke: var(--muted);
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+  opacity: .55;
+}
+.fcurve .fc-dot { stroke: var(--card); stroke-width: 1.5; }
+.fcurve .fc-dot.now { fill: var(--accent); }
+.fcurve .fc-dot.due { fill: var(--warn); }
+.fcurve .fc-t {
+  font-size: 10px;
+  fill: var(--muted);
+  font-family: inherit;
+}
+.fcurve .fc-t.end { fill: var(--warn); }
+
+/* ---- 统计里的易混词对 ---- */
+.pairlist { display: flex; flex-direction: column; gap: 6px; }
+.pair {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 9px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--bg);
+}
+.pair-w { min-width: 0; flex: 1; display: flex; flex-direction: column; }
+.pair-w .pw {
+  align-self: flex-start;
+  border: 0;
+  background: none;
+  padding: 0;
+  font: inherit;
+  font-weight: 620;
+  color: var(--fg);
+  cursor: pointer;
+  border-bottom: 1px dashed transparent;
+}
+.pair-w .pw:hover { color: var(--accent); border-bottom-color: var(--accent); }
+.pair-w .pd {
+  font-size: 11.5px;
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pair-vs { flex: none; color: var(--muted); font-size: 12px; }
+.pair-n {
+  flex: none;
+  font-style: normal;
+  font-size: 10.5px;
+  min-width: 18px;
+  text-align: center;
+  padding: 1px 5px;
+  border-radius: 999px;
+  background: var(--bad-weak);
+  color: var(--bad);
+}
+
+/* 详情里的易混词 chip */
+.chips.confs { margin-top: 2px; }
+.chip.cfchip { border-color: var(--bad); color: var(--bad); background: var(--bad-weak); }
+.chip.cfchip:hover { background: var(--bad); color: var(--card); }
+
+/* 熟练度柱子可点 */
+.lvdist .lvb { cursor: pointer; border-radius: 5px; transition: background .15s; }
+.lvdist .lvb:hover { background: var(--accent-weak); }
+.lvdist .lvb:hover i { opacity: 1; }
+
+/* 空间不够时的降级版对比块：只留两行词，藏掉释义与解释 */
+.why.one .why-d,
+.why.one .why-hint { display: none; }
+.why.one { padding: 7px 10px; }
+
+/* ---- v4.2 拼写差异：逐字母对齐，直接指出漏了/多了哪一个字母 ----
+   每个字母都是一个等宽格子，两行才会严格对齐（漏写的位置留空格子，
+   而不是把后面的字母挤过来）—— 对齐本身就是信息。 */
+.sdiff { width: 100%; max-width: 460px; margin: 5px 0 3px; }
+.sdiff-row { display: flex; align-items: center; gap: 8px; }
+.sdiff-tag {
+  flex: none; width: 44px; text-align: right;
+  font-size: 11px; letter-spacing: .3px; color: var(--muted);
+}
+.sdiff-w { display: flex; }
+.sdiff-w i {
+  display: block; width: 1.06em;
+  font-style: normal; text-align: center;
+  font-size: 14px; line-height: 1.55;
+  font-family: ui-monospace, SFMono-Regular, Consolas, "Courier New", monospace;
+  color: var(--fg);
+  border-bottom: 1.5px solid transparent;
+}
+.sdiff-w i.dbad { color: var(--bad); border-bottom-color: var(--bad); }
+.sdiff-w i.dmiss {
+  color: var(--ok); border-bottom-color: var(--ok);
+  background: var(--ok-weak); border-radius: 3px;
+}
+.sdiff-w i.dgap { border-bottom-style: dashed; border-bottom-color: var(--border); }
+.sdiff-hint {
+  margin: 3px 0 0 52px;
+  text-align: left;          /* 卡片里是居中排版，这里必须显式左对齐，否则提示会飘到右边 */
+  font-size: 11.5px; line-height: 1.5; color: var(--muted);
+}
+/* 超长词不铺格子，退回一行原文 */
+.sdiff.plain { display: flex; align-items: center; gap: 8px; }
+.sdiff-raw {
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 13px; color: var(--bad); word-break: break-all;
+}
+
+/* ---- v5.0：结算页「本段最卡壳」+ 四格成绩单 ---- */
+.done-cards.q4 { grid-template-columns: repeat(4, 1fr); max-width: 460px; }
+.donemiss {
+  display: flex; flex-wrap: wrap; align-items: center;
+  gap: 6px; justify-content: center; margin: 2px 0 0;
+}
+.donemiss .dm-label { font-size: 11.5px; color: var(--muted); }
+.donemiss .dmw {
+  font-size: 12px; padding: 3px 9px;
+  border: 1px solid var(--border); background: var(--card);
+  border-radius: 999px; cursor: pointer; transition: border-color .15s, background .15s;
+}
+.donemiss .dmw:hover { border-color: var(--bad); background: var(--bad-weak); }
+.donemiss .dmw i { font-style: normal; font-size: 10.5px; color: var(--bad); margin-left: 2px; }
+.done .actions.sm #drillmiss { font-size: 13px; padding: 7px 13px; }
+
+/* ---- v5.0：详情页记忆曲线大图（小图说代价，大图说「你现在在哪」） ---- */
+.mcurve {
+  width: 100%;
+  margin: 8px 0 4px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg);
+  padding: 8px 12px 7px;
+}
+.mcurve svg { width: 100%; max-width: 360px; height: auto; display: block; margin: 0 auto; }
+.mc-axis { stroke: var(--border); stroke-width: 1; }
+.mc-grid { stroke: var(--border); stroke-width: 1; stroke-dasharray: 3 4; opacity: .75; }
+.mc-line { fill: none; stroke: var(--accent); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.mc-now { stroke: var(--fg); stroke-width: 1; opacity: .3; stroke-dasharray: 2 3; }
+.mc-due { stroke: var(--warn); stroke-width: 1.2; stroke-dasharray: 4 3; opacity: .9; }
+.mc-dot { fill: var(--accent); stroke: var(--card); stroke-width: 2; }
+.mc-t { font-size: 9px; fill: var(--muted); font-family: inherit; }
+.mc-cap { font-size: 12px; color: var(--muted); text-align: center; margin-top: 3px; line-height: 1.6; }
+.mc-cap b { color: var(--fg); }
+.mc-warn { color: var(--warn); }
+.mc-note { font-size: 11px; color: var(--muted); line-height: 1.6; margin-top: 4px; text-align: left; }
+
+/* ---- v5.0：听写模式（第四模式，默认关） ---- */
+/* 一张卡里只有「一个大喇叭 + 输入框」：没有音标、没有首字母，逼耳朵干活。
+   大喇叭做成可反复点的实体块，是因为听写卡上「再听一遍」是最高频的动作。 */
+.listenbig { display: flex; justify-content: center; width: 100%; }
+.listenbtn {
+  display: inline-flex; align-items: center; gap: 9px;
+  padding: 12px 22px; border-radius: 999px;
+  border: 1px solid var(--accent); background: var(--accent-weak, var(--card));
+  color: var(--accent); font-size: 14px; font-weight: 600; cursor: pointer;
+  transition: transform .12s, box-shadow .15s, background .15s;
+}
+.listenbtn:hover { transform: translateY(-1px); box-shadow: 0 4px 14px rgba(0,0,0,.08); }
+.listenbtn:active { transform: translateY(0) scale(.98); }
+.listenbtn .lspk { font-size: 19px; line-height: 1; }
+.listenbtn .ltxt { letter-spacing: .02em; }
+body.is-speaking .listenbtn { animation: spkpulse .9s ease-out infinite; }
+.listenmeta {
+  width: 100%; max-width: 460px; margin: 0 auto;
+  font-size: 12px; color: var(--muted); text-align: center; line-height: 1.6;
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 6px;
+}
+.listenmeta .hintlabel {
+  font-size: 11px; color: var(--accent); background: var(--accent-weak, var(--bg));
+  border-radius: 999px; padding: 1px 8px;
+}
+.listenmeta .hintcost { font-style: normal; font-size: 11px; color: var(--warn); }
+.actions #hintw { font-size: 14px; }
+.actions #hintw:disabled { opacity: .55; cursor: default; }
+
+/* ---- v5.0：技能画像（词 × 模式） + 弱项榜 ---- */
+.sk-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(112px, 1fr)); gap: 10px; margin: 4px 0 8px; }
+.sk-cell {
+  display: flex; flex-direction: column; gap: 3px;
+  padding: 9px 10px; border: 1px solid var(--border); border-radius: 11px; background: var(--card);
+}
+.sk-pct { font-size: 19px; line-height: 1.15; }
+.sk-pct.g-ok { color: var(--ok); }
+.sk-pct.g-mid { color: var(--warn); }
+.sk-pct.g-low { color: var(--bad); }
+.sk-pct.sk-none { color: var(--muted); }
+.sk-name { font-size: 12px; color: var(--fg); font-weight: 600; }
+.sk-bar { display: block; height: 4px; border-radius: 999px; background: var(--border); overflow: hidden; }
+.sk-bar > i { display: block; height: 100%; border-radius: 999px; background: var(--muted); transition: width .3s ease; }
+.sk-bar > i.g-ok { background: var(--ok); }
+.sk-bar > i.g-mid { background: var(--warn); }
+.sk-bar > i.g-low { background: var(--bad); }
+.sk-meta { font-size: 10.5px; color: var(--muted); }
+.sk-weak { display: flex; flex-direction: column; gap: 5px; }
+.sk-wrow {
+  position: relative; display: flex; align-items: center; gap: 8px;
+  padding: 6px 10px; border: 1px solid var(--border); border-radius: 9px;
+  background: var(--card); cursor: pointer; text-align: left; overflow: hidden;
+  transition: border-color .15s, background .15s;
+}
+.sk-wrow:hover { border-color: var(--accent); background: var(--accent-weak); }
+.sk-wrow .sk-w { font-weight: 600; font-size: 13.5px; min-width: 84px; }
+.sk-wrow .sk-tag {
+  font-size: 10.5px; padding: 1px 7px; border-radius: 999px;
+  background: var(--accent-weak); color: var(--accent);
+}
+.sk-wrow .sk-risk {
+  position: absolute; left: 0; bottom: 0; height: 2px;
+  background: var(--bad); opacity: .55; border-radius: 999px;
+}
+.sk-wrow .sk-num { margin-left: auto; font-size: 11px; color: var(--bad); font-variant-numeric: tabular-nums; }
+
+/* 「再练这几个」跟在卡壳 chips 后面，做成同尺寸的一颗，别另起一行 */
+.donemiss .dmb {
+  font-size: 12px; padding: 3px 10px;
+  border: 1px dashed var(--accent); background: transparent;
+  color: var(--accent); border-radius: 999px; cursor: pointer;
+  transition: background .15s, color .15s;
+}
+.donemiss .dmb:hover { background: var(--accent-weak); }
+/* 听写卡的提示行：空着时不留一条空白线 */
+.listenmeta:empty { display: none; }
+
+/* ============================================================
+   v5.1 封面视觉：一本书当主角，其余细节按「纸 + 细线」收敛
+   —— 只动颜色 / 圆角 / 间距 / 字重，不动字号与控件高度，
+      免得把 hero-fit 的五档断言和 card-fit 的六档一起打翻
+   ============================================================ */
+.hero {
+  gap: 15px;
+  padding: 20px 22px 18px;
+  border-radius: 24px;
+  background:
+    radial-gradient(115% 120% at 100% -15%, var(--accent-weak) 0%, transparent 58%),
+    radial-gradient(95% 85% at -12% 112%, var(--accent-weak) 0%, transparent 55%),
+    var(--card);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .04), 0 14px 40px -18px rgba(20, 40, 30, .22);
+}
+:root[data-theme="dark"] .hero {
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 18px 44px -20px rgba(0, 0, 0, .6);
+}
+@media (prefers-color-scheme: dark) {
+  :root[data-theme="auto"] .hero {
+    box-shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 18px 44px -20px rgba(0, 0, 0, .6);
+  }
+}
+.hero-date { display: flex; align-items: center; font-size: 11.5px; letter-spacing: 1.8px; }
+.hero-date::before {
+  content: ''; width: 5px; height: 5px; border-radius: 50%;
+  background: var(--accent); margin-right: 7px; flex-shrink: 0;
+}
+.hero h1 { letter-spacing: -.015em; margin-top: 7px; }
+.hero h1 em { position: relative; }
+.hero-sub { font-size: 12.5px; line-height: 1.6; margin-top: 7px; }
+.hero-sub b { color: var(--fg); font-weight: 600; }
+
+/* 任务卡：细线框 + 左侧一道细色条，靠留白分层而不是靠阴影堆 */
+.task {
+  position: relative;
+  background: var(--bg);
+  border-radius: 15px;
+  padding: 12px 15px 12px 17px;
+  overflow: hidden;
+}
+.task::before {
+  content: ''; position: absolute; left: 0; top: 10px; bottom: 10px;
+  width: 3px; border-radius: 0 3px 3px 0; background: var(--accent);
+  opacity: .85;
+}
+#task-review::before { background: var(--warn); }
+.task.browse::before { background: var(--muted); opacity: .5; }
+.task-name { font-size: 11.5px; letter-spacing: 1.8px; }
+.task-head b { font-variant-numeric: tabular-nums; }
+.task-note { font-size: 11.5px; line-height: 1.55; }
+
+/* 三格数字：压低边框、抬高数字，读起来像仪表 */
+.hstat { border-radius: 12px; padding: 11px 8px 10px; }
+.hstat b { font-size: 20px; letter-spacing: -.3px; }
+.hstat span { font-size: 11px; letter-spacing: .2px; }
+
+/* 主按钮：一层柔和的纸面渐变 + 尾部箭头，去掉硬阴影 */
+.cta {
+  border-radius: 15px;
+  background: linear-gradient(160deg, #55aa7f 0%, #36805f 55%, #2c6b4f 100%);
+  box-shadow: 0 2px 10px rgba(47, 115, 85, .22);
+  letter-spacing: .2px;
+}
+.cta::after { content: '→'; margin-left: 8px; opacity: .8; font-weight: 500; }
+.cta:hover { box-shadow: 0 4px 16px rgba(47, 115, 85, .3); transform: translateY(-1px); }
+.cta:active { transform: translateY(0) scale(.99); }
+
+/* 未来 7 天：把柱子做成书页堆的样子（顶端圆、底部压平） */
+.forecast { border-bottom-color: var(--border); }
+.forecast .fc i {
+  border-radius: 999px 999px 2px 2px;
+  background: linear-gradient(180deg, var(--accent) 0%, var(--accent-weak) 190%);
+  opacity: .9;
+}
+.forecast .fc.today i { background: linear-gradient(180deg, var(--warn) 0%, var(--accent-weak) 200%); }
+.forecast .fc:hover i { opacity: 1; }
+
+.hero-tip { font-size: 11px; opacity: .85; letter-spacing: .1px; }
+
+/* 矮窗口再收一档：只压缩留白，不缩字（缩字会让标题和数字失去分量） */
+@media (max-height: 860px) {
+  .hero { gap: 11px; padding: 15px 18px 14px; }
+  .hero-tip { display: none; }
+  .task { padding: 10px 13px 10px 15px; }
+  .hstat { padding: 9px 8px 8px; }
+  .forecast { height: 38px; }
+  .hero-sub { margin-top: 5px; }
+}
+@media (max-width: 560px) and (max-height: 860px) {
+  .hero { gap: 10px; padding: 13px 14px 12px; }
+  .hero h1 { font-size: 1.35rem; }
+}
+
+/* ============================================================
+   v6.4 词根词缀 + 通用字典
+   ============================================================ */
+
+/* ---------- 词根拆分块（答后卡片 / 教学卡） ---------- */
+.rootbox {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 8px;
+  margin: 7px 0 9px;
+  padding: 7px 11px 8px;
+  background: var(--accent-weak);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+.rootbox .rlabel {
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: .6px;
+  flex-shrink: 0;
+}
+.rootbox .rword {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: .6px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  word-break: break-all;
+}
+.rootbox .rnote {
+  flex-basis: 100%;
+  font-size: 11.5px;
+  color: var(--muted);
+  line-height: 1.65;
+}
+.rootbox .rnote b { color: var(--fg); font-weight: 600; }
+.rootbox .rnote i { font-style: normal; color: var(--muted); opacity: .55; margin: 0 5px; }
+.rootbox .rnote em { font-style: normal; opacity: .7; margin-left: 1px; font-size: 10.5px; }
+
+/* ---------- 通用字典结果行 ---------- */
+.lexrow {
+  display: grid;
+  grid-template-columns: minmax(96px, auto) 1fr;
+  gap: 3px 14px;
+  align-items: baseline;
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  border-radius: 8px;
+}
+.lexrow:hover { background: var(--accent-weak); }
+.lexrow .lw { font-weight: 600; font-size: 14px; word-break: break-all; }
+.lexrow .ld { font-size: 12.5px; color: var(--muted); line-height: 1.55; }
+.lextag {
+  font-style: normal;
+  font-size: 9.5px;
+  line-height: 1.5;
+  padding: 1px 5px;
+  border-radius: 5px;
+  margin-left: 5px;
+  color: var(--accent);
+  background: var(--accent-weak);
+  border: 1px solid var(--border);
+  white-space: nowrap;
+}
+@media (max-width: 560px) {
+  .lexrow { grid-template-columns: 1fr; gap: 3px; }
+  .lexrow .ld { font-size: 12px; }
+}
+
+/* 矮窗口（≤760px 高）答后一屏：词根行要留，但得挤一挤。
+   900×720 这一档曾经因为多了一行词根溢出 29px —— 这里把留白和行距各收一档补回来，
+   字号只降 1px，不靠缩字硬塞。 */
+@media (max-height: 760px) {
+  .rootbox { margin: 2px 0 3px; padding: 4px 9px 5px; border-radius: 8px; }
+  .rootbox .rword { font-size: 14px; }
+  .rootbox .rnote { font-size: 11px; line-height: 1.32; }
+  .card.answered .dblock .sent { margin-top: 2px; }
+  .card.answered .dblock + .dblock { margin-top: 3px; }
+  .card.answered .qres { margin-bottom: 2px; font-size: 14px; }
+  .card.answered .mhead { margin-bottom: 3px; }
+  .card.answered .mword { font-size: 14px; }
+}
+
+/* 一词多义、两个义项各自都带例句时（js 打的 .two-ex），释义块比平时高约 55px。
+   1440×900 因此溢 17px、900×720 溢 20px —— 这里只压这两条例句的内边距和行距，
+   不缩中文释义字号（那才是要读的东西）。 */
+.card.answered .qmean.two-ex .dblock + .dblock { margin-top: 3px; }
+.card.answered .qmean.two-ex .dblock .sent { margin-top: 2px; }
+.card.answered .qmean.two-ex .sent { padding: 3px 30px 3px 10px; line-height: 1.34; }
+.card.answered .qmean.two-ex .sent .en { font-size: .9rem; }
+.card.answered .qmean.two-ex .sent .cn { margin-top: 0; }
+
+/* 通用字典词条的说明行（详情卡里没有队列可排，只作查阅） */
+.richcard .lexnote { margin: 0 0 8px; }
+
+/* 词条卡里「内容 / 操作」的分割线：上面是释义与例句，下面是收藏、已掌握这类动作 */
+.cardsep { height: 1px; margin: 14px 0 10px; background: var(--border); }

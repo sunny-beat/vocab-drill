@@ -1,8 +1,10 @@
-/* 单词速刷 Service Worker —— 离线缓存（仅 http/https 生效，file:// 不注册）
+/* 唯单词 Service Worker —— 离线缓存（仅 http/https 生效，file:// 不注册）
  *
- * 两个缓存分开，避免为了更新代码重下 3.4MB 词库：
+ * 两个缓存分开，避免为了更新代码重下 12MB 词库：
  *   SHELL（shell）: html/css/js/manifest/图标，安装时预缓存，带重试
- *   DATA （data） : data/*.js 词库（每个 1.6~1.8MB），首次访问时按需缓存（stale-while-revalidate）
+ *   DATA （data） : data/*.js 词库（两本词书各 2MB + 通用字典 dict.js 8MB），
+ *                  首次访问时按需缓存（stale-while-revalidate）——
+ *                  字典只在进查词页时才被请求，所以不进背单词的人永远不会下它
  *
  * 策略：
  *   - 页面导航：network-first（先拿新版，断网回退缓存）
@@ -10,7 +12,7 @@
  *   - 其余静态资源：stale-while-revalidate，写 SHELL 缓存
  * 升级资源后务必同时改这里的 VER 和 app.js 的 APP_VER。
  */
-const VER = '3.4.0';
+const VER = '6.11.4';
 const SHELL = 'vd-shell-' + VER;
 const DATA = 'vd-data-' + VER;
 
@@ -20,6 +22,7 @@ const CORE = [
   './css/style.css',
   './js/app.js',
   './js/vendor/fsrs.global.js',
+  './js/vendor/cloud-sdk.js',
   './manifest.webmanifest',
   './icons/icon.svg',
   './icons/icon-192.png',
