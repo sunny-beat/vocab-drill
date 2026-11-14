@@ -56,9 +56,9 @@ Service Worker 把外壳和词库都缓存到本地。断网、飞行模式、�
 
 | 平台 | 文件 | 大小 | 说明 |
 |:--:|---|---:|---|
-| **Android** | [`weidanci-6.11.4.apk`](https://github.com/sunny-beat/vocab-drill/releases/download/v6.11.4/weidanci-6.11.4.apk) | 57 KB | 在线同步版。首启联网一次（约 20 MB），之后断网可用；可直接覆盖旧版升级 |
-| **Windows** | [`weidanci-setup-6.11.4.exe`](https://github.com/sunny-beat/vocab-drill/releases/download/v6.11.4/weidanci-setup-6.11.4.exe) | 82 MB | 装到当前用户目录，不需要管理员权限；自带卸载 |
-| **任意系统** | [`weidanci-standalone-6.11.4.html`](https://github.com/sunny-beat/vocab-drill/releases/download/v6.11.4/weidanci-standalone-6.11.4.html) | 20 MB | 单文件版：双击即用、零外链、**不含云同步**（进度用 JSON 导入导出） |
+| **Android** | [`weidanci-6.11.4.apk`](https://github.com/sunny-beat/vocab-drill/releases/download/v6.11.4/weidanci-6.11.4.apk) | 57&nbsp;KB | 在线同步版。首启联网一次（约 20 MB），之后断网可用；可直接覆盖旧版升级 |
+| **Windows** | [`weidanci-setup-6.11.4.exe`](https://github.com/sunny-beat/vocab-drill/releases/download/v6.11.4/weidanci-setup-6.11.4.exe) | 82&nbsp;MB | 装到当前用户目录，不需要管理员权限；自带卸载 |
+| **任意系统** | [`weidanci-standalone-6.11.4.html`](https://github.com/sunny-beat/vocab-drill/releases/download/v6.11.4/weidanci-standalone-6.11.4.html) | 20&nbsp;MB | 单文件版：双击即用、零外链、**不含云同步**（进度用 JSON 导入导出） |
 
 > **两个安装包都是「在线同步版」**：外壳直接打开线上地址，所以账号登录、跨设备同步是原生可用的，
 > 手机 / 电脑 / 网页看到的是同一份进度。代价是首次启动要联网一次，之后 Service Worker 会缓存外壳和用过的词库。
